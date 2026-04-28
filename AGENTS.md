@@ -22,3 +22,6 @@ Keep this file short and repo-wide. Put workflow details in repo-local skills an
 - Use `_workspace/` markdown handoffs for product, UX, AI, build, and QA artifacts.
 - Prefer repo-local Pet Log skills under `.agents/skills/` before generic planning or implementation workflows.
 - Web commands run from `app/web`: `npm run dev`, `npm run lint`, `npm run typecheck`, and `npm run build`.
+
+## md 파일 작성 규칙
+- 한글로 작성할것

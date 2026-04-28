@@ -1,70 +1,129 @@
-const summaryCards = [
-  {
-    title: "오늘 요약",
-    value: "평소보다 활동량이 적어요",
-    detail: "최근 3일 평균 산책 시간보다 18분 짧습니다.",
-  },
-  {
-    title: "AI 질문",
-    value: "오늘 배변 상태는 어땠나요?",
-    detail: "어제 기록이 비어 있어 변화 판단에 필요합니다.",
-  },
-  {
-    title: "추천 행동",
-    value: "짧은 저녁 산책",
-    detail: "무리 없는 15분 산책으로 활동 리듬을 회복해보세요.",
-  },
-];
+import Link from "next/link";
+import { AppShell } from "@/components/app-shell";
+import { AiMascot, Card, CategoryBadge, SectionHeader } from "@/components/ui";
+import { petProfile, records, suggestions, todos } from "@/lib/mock-data";
+import { PetIcon } from "@/components/pet-icons";
 
 export default function Home() {
+  const latestRecords = records.slice(0, 3);
+
   return (
-    <main className="min-h-screen bg-[#f7f8f4] text-[#20231f]">
-      <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between gap-4 border-b border-[#d8ddd2] pb-5">
-          <div>
-            <p className="text-sm font-medium text-[#5f6f52]">Pet Log MVP</p>
-            <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">두부의 오늘 상태</h1>
+    <AppShell
+      action={
+        <Link
+          aria-label="기록 추가"
+          className="grid h-10 w-10 place-items-center rounded-full bg-[#16804b] text-white shadow-sm"
+          href="/record"
+        >
+          <PetIcon className="h-5 w-5" name="plus" />
+        </Link>
+      }
+      subtitle="AI가 먼저 케어해주는 홈"
+      title={`${petProfile.name}의 오늘`}
+    >
+      <div className="space-y-5">
+        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
+          <div className="flex gap-3">
+            <AiMascot />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#16804b]">AI 질문</p>
+              <h2 className="mt-1 text-lg font-bold leading-7 text-[#1f2922]">오늘 배변 상태는 어땠나요?</h2>
+              <p className="mt-2 text-sm leading-6 text-[#62705f]">어제 기록이 비어 있어 변화 판단에 필요합니다.</p>
+              <Link
+                className="mt-4 inline-flex h-10 items-center rounded-xl bg-[#16804b] px-5 text-sm font-bold text-white"
+                href="/record"
+              >
+                기록하기
+              </Link>
+            </div>
           </div>
-          <button className="rounded-md bg-[#2f5d50] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#254a40]">
-            기록 추가
-          </button>
-        </header>
+        </Card>
 
-        <div className="grid flex-1 gap-5 py-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-lg border border-[#d8ddd2] bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-[#5f6f52]">AI 상태 브리핑</p>
-                <h2 className="mt-2 text-xl font-semibold">기록을 해석해 다음 행동을 제안합니다</h2>
-              </div>
-              <span className="rounded-full bg-[#e4f0df] px-3 py-1 text-xs font-semibold text-[#31513b]">
-                MVP
-              </span>
-            </div>
+        <section>
+          <SectionHeader title="오늘 요약" />
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ["식사", "줄어듦", "주의"],
+              ["활동량", "보통", "안정"],
+              ["배변", "정상", "좋음"],
+            ].map(([label, value, state]) => (
+              <Card className="p-3 text-center" key={label}>
+                <p className="text-xs font-bold text-[#788276]">{label}</p>
+                <p className="mt-2 text-sm font-black text-[#1f2922]">{value}</p>
+                <p className="mt-1 text-[11px] font-semibold text-[#16804b]">{state}</p>
+              </Card>
+            ))}
+          </div>
+        </section>
 
-            <div className="mt-6 grid gap-3">
-              {summaryCards.map((card) => (
-                <article key={card.title} className="rounded-md border border-[#dfe4da] p-4">
-                  <p className="text-sm font-medium text-[#6a7463]">{card.title}</p>
-                  <h3 className="mt-2 text-lg font-semibold">{card.value}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#5d6658]">{card.detail}</p>
-                </article>
+        <section>
+          <SectionHeader
+            action={
+              <Link className="text-xs font-bold text-[#16804b]" href="/suggestions">
+                더보기
+              </Link>
+            }
+            title="AI 제안"
+          />
+          <div className="space-y-3">
+            {suggestions.slice(0, 2).map((suggestion) => (
+              <Card className="p-4" key={suggestion.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-[#16804b]">{suggestion.category}</p>
+                    <h3 className="mt-1 font-bold text-[#1f2922]">{suggestion.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#62705f]">{suggestion.detail}</p>
+                  </div>
+                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#16804b]" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeader title="오늘 할 일" />
+          <Card>
+            <ul className="space-y-3">
+              {todos.map((todo, index) => (
+                <li className="flex items-center gap-3 text-sm font-semibold text-[#3d4639]" key={todo}>
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#eef5e9] text-xs text-[#16804b]">
+                    {index + 1}
+                  </span>
+                  {todo}
+                </li>
               ))}
-            </div>
-          </section>
+            </ul>
+          </Card>
+        </section>
 
-          <aside className="rounded-lg border border-[#d8ddd2] bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">빠른 기록</h2>
-            <textarea
-              className="mt-4 min-h-36 w-full resize-none rounded-md border border-[#cfd6c8] bg-[#fbfcfa] p-3 text-sm outline-none transition placeholder:text-[#7a8374] focus:border-[#2f5d50] focus:ring-2 focus:ring-[#2f5d50]/20"
-              placeholder="예: 오늘 아침 사료를 조금 남겼고 산책 중 자주 멈췄어요."
-            />
-            <button className="mt-3 w-full rounded-md bg-[#20231f] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#343932]">
-              AI로 구조화
-            </button>
-          </aside>
-        </div>
-      </section>
-    </main>
+        <section>
+          <SectionHeader
+            action={
+              <Link className="text-xs font-bold text-[#16804b]" href="/timeline">
+                전체 보기
+              </Link>
+            }
+            title="최근 기록"
+          />
+          <div className="space-y-3">
+            {latestRecords.map((record) => (
+              <Card className="p-4" key={record.id}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <CategoryBadge category={record.category} />
+                      <span className="text-xs font-semibold text-[#8a9286]">{record.time}</span>
+                    </div>
+                    <p className="mt-2 truncate text-sm font-bold text-[#1f2922]">{record.title}</p>
+                  </div>
+                  <span className="text-[#9ba597]">›</span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      </div>
+    </AppShell>
   );
 }
