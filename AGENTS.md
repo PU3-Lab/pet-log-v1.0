@@ -9,6 +9,7 @@ Keep this file short and repo-wide. Put workflow details in repo-local skills an
 - Canonical visual references: `pet-log-ui.png` and `펫로그_20260428/*`.
 - Harness entry point: `.agents/skills/pet-log-mvp-orchestrator/SKILL.md`.
 - Team contract: `docs/harness/pet-log-mvp/team-spec.md`.
+- Web app path: `app/web` with Next.js App Router, TypeScript, ESLint, Tailwind CSS, and Turbopack dev server.
 
 ## Why
 
@@ -20,4 +21,4 @@ Keep this file short and repo-wide. Put workflow details in repo-local skills an
 
 - Use `_workspace/` markdown handoffs for product, UX, AI, build, and QA artifacts.
 - Prefer repo-local Pet Log skills under `.agents/skills/` before generic planning or implementation workflows.
-- There is no app stack yet. Do not invent build or test commands until the implementation scaffold exists.
+- Web commands run from `app/web`: `npm run dev`, `npm run lint`, `npm run typecheck`, and `npm run build`.
