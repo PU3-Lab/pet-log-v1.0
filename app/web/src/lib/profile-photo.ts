@@ -5,6 +5,12 @@ export type ProfilePhotoFile = {
   type: string;
 };
 
+export type ProfileCameraSource = {
+  mediaDevices?: {
+    getUserMedia?: unknown;
+  };
+};
+
 export function getProfilePhotoError(file: ProfilePhotoFile) {
   if (!file.type.startsWith("image/")) {
     return "이미지 파일만 업로드할 수 있습니다.";
@@ -15,4 +21,8 @@ export function getProfilePhotoError(file: ProfilePhotoFile) {
   }
 
   return "";
+}
+
+export function canUseProfileCameraStream(source: ProfileCameraSource) {
+  return typeof source.mediaDevices?.getUserMedia === "function";
 }

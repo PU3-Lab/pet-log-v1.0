@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, MiniLineChart, Pill, SectionHeader } from "@/components/ui";
 import { metrics } from "@/lib/mock-data";
-import { getProfilePhotoError } from "@/lib/profile-photo";
+import { canUseProfileCameraStream, getProfilePhotoError } from "@/lib/profile-photo";
 import type { PetProfile } from "@/lib/types";
 
 const emptyProfile: PetProfile = {
@@ -25,10 +25,28 @@ export default function ProfilePage() {
   const weightMetric = metrics.find((metric) => metric.label === "체중") ?? metrics[0];
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [draft, setDraft] = useState<PetProfile>(profile);
   const [notesText, setNotesText] = useState(profile.notes.join("\n"));
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
+  }
 
   function startEdit() {
     setDraft(profile);
@@ -45,6 +63,7 @@ export default function ProfilePage() {
   }
 
   function cancelEdit() {
+    stopCamera();
     setDraft(profile);
     setNotesText(profile.notes.join("\n"));
     setError("");
@@ -79,6 +98,58 @@ export default function ProfilePage() {
     reader.readAsDataURL(file);
   }
 
+  async function openCamera() {
+    setError("");
+
+    if (!canUseProfileCameraStream(navigator)) {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    try {
+      stopCamera();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setIsCameraOpen(true);
+
+      window.setTimeout(() => {
+        if (!videoRef.current) {
+          return;
+        }
+        videoRef.current.srcObject = stream;
+        void videoRef.current.play();
+      }, 0);
+    } catch {
+      setError("카메라를 열 수 없습니다. 권한을 허용하거나 사진 업로드를 사용해주세요.");
+      cameraInputRef.current?.click();
+    }
+  }
+
+  function captureCameraPhoto() {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      setError("카메라 화면을 불러온 뒤 다시 촬영해주세요.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setError("촬영 이미지를 만들지 못했습니다.");
+      return;
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setDraft((current) => ({ ...current, photoDataUrl: canvas.toDataURL("image/jpeg", 0.9) }));
+    setError("");
+    stopCamera();
+  }
+
   function saveProfile() {
     const nextProfile: PetProfile = {
       ...emptyProfile,
@@ -105,6 +176,7 @@ export default function ProfilePage() {
     setDraft(nextProfile);
     setNotesText(nextProfile.notes.join("\n"));
     setError("");
+    stopCamera();
     setIsEditing(false);
   }
 
@@ -149,7 +221,7 @@ export default function ProfilePage() {
                       </button>
                       <button
                         className="h-10 rounded-xl border border-[#d8e1f2] bg-[#f6f9ff] text-sm font-bold text-[#356aa8]"
-                        onClick={() => cameraInputRef.current?.click()}
+                        onClick={openCamera}
                         type="button"
                       >
                         촬영
@@ -182,6 +254,33 @@ export default function ProfilePage() {
                   type="file"
                 />
               </div>
+              {isCameraOpen ? (
+                <div className="rounded-2xl border border-[#d8e1f2] bg-[#f6f9ff] p-3">
+                  <video
+                    autoPlay
+                    className="aspect-[4/3] w-full rounded-2xl bg-[#1f2922] object-cover"
+                    muted
+                    playsInline
+                    ref={videoRef}
+                  />
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      className="h-11 rounded-xl border border-[#dce5d5] bg-white text-sm font-bold text-[#40513f]"
+                      onClick={stopCamera}
+                      type="button"
+                    >
+                      닫기
+                    </button>
+                    <button
+                      className="h-11 rounded-xl bg-[#356aa8] text-sm font-bold text-white"
+                      onClick={captureCameraPhoto}
+                      type="button"
+                    >
+                      사진 찍기
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {[
                 ["이름", "name"],
                 ["품종", "breed"],
