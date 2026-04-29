@@ -47,6 +47,8 @@ export default function AnalysisPage() {
   const metrics = useMemo(() => getAnalysisMetrics(records), [records]);
   const vetBrief = useMemo(() => getVetBrief(records), [records]);
   const trendChart = useMemo(() => getAnalysisTrendChart(metrics, activeMetric), [activeMetric, metrics]);
+  const scopedRecords = activeRange === "weekly" ? records.slice(0, 7) : records.slice(0, 30);
+  const alertCount = scopedRecords.filter((record) => record.status === "alert").length;
 
   return (
     <AppShell subtitle="데이터를 분석하고 해석해요" title="분석 리포트">
@@ -62,6 +64,20 @@ export default function AnalysisPage() {
         <Card className="bg-gradient-to-br from-white to-[#f2f8ec]">
           <p className="text-sm font-bold text-[#16804b]">{summary.period}</p>
           <h2 className="mt-2 text-lg font-black text-[#1f2922]">{summary.title}</h2>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">기록</p>
+              <p className="mt-1 text-base font-black text-[#1f2922]">{scopedRecords.length}</p>
+            </div>
+            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">주의</p>
+              <p className="mt-1 text-base font-black text-[#1f2922]">{alertCount}</p>
+            </div>
+            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">지표</p>
+              <p className="mt-1 text-base font-black text-[#1f2922]">{metrics.length}</p>
+            </div>
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {summary.cards.map((card) => (
               <div className={`rounded-2xl border p-3 ${toneCard[card.tone]}`} key={card.id}>
@@ -76,12 +92,12 @@ export default function AnalysisPage() {
 
         <section>
           <SectionHeader title="변화 추이" />
-          <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
-            <Pill active={activeMetric === "all"} onClick={() => setActiveMetric("all")}>
+          <div className="mb-3 grid grid-cols-5 gap-2">
+            <Pill active={activeMetric === "all"} className="w-full px-2 text-xs" onClick={() => setActiveMetric("all")}>
               전체
             </Pill>
             {metrics.map((metric) => (
-              <Pill active={activeMetric === metric.id} key={metric.id} onClick={() => setActiveMetric(metric.id)}>
+              <Pill active={activeMetric === metric.id} className="w-full px-2 text-xs" key={metric.id} onClick={() => setActiveMetric(metric.id)}>
                 {metric.label}
               </Pill>
             ))}

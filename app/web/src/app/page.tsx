@@ -40,6 +40,7 @@ export default function Home() {
   const recentChange = getRecentChange(records);
   const aiSuggestions = settings.aiInsightEnabled ? getAiCareSuggestions(records) : [];
   const homeSuggestions = settings.aiInsightEnabled ? [...aiSuggestions, ...suggestions].slice(0, 2) : [];
+  const pendingSchedules = schedules.filter((schedule) => !schedule.isDone).length;
 
   return (
     <AppShell
@@ -56,34 +57,53 @@ export default function Home() {
       title={`${profile.name}의 오늘`}
     >
       <div className="space-y-5">
-        <section className="grid grid-cols-[52px_1fr] items-center gap-3 rounded-2xl border border-[#dfe6d9] bg-white p-4 shadow-[0_8px_24px_rgba(49,65,44,0.05)]">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eaf5e5] text-xl font-black text-[#16804b]">
-            {profile.photoDataUrl ? (
-              <Image
-                alt={`${profile.name} 프로필 사진`}
-                className="h-full w-full rounded-2xl object-cover"
-                height={48}
-                src={profile.photoDataUrl}
-                unoptimized
-                width={48}
-              />
-            ) : (
-              profile.name.slice(0, 1)
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-base font-black text-[#1f2922]">{profile.name}</p>
-              <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[11px] font-bold text-[#5e6859]">
-                {profile.breed}
-              </span>
-              <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[11px] font-bold text-[#5e6859]">
-                {profile.age}
-              </span>
+        <section className="rounded-2xl border border-[#dfe6d9] bg-white p-4 shadow-[0_8px_24px_rgba(49,65,44,0.05)]">
+          <div className="grid grid-cols-[52px_1fr_auto] items-center gap-3">
+            <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-[#eaf5e5] text-xl font-black text-[#16804b]">
+              {profile.photoDataUrl ? (
+                <Image
+                  alt={`${profile.name} 프로필 사진`}
+                  className="h-full w-full object-cover"
+                  height={48}
+                  src={profile.photoDataUrl}
+                  unoptimized
+                  width={48}
+                />
+              ) : (
+                profile.name.slice(0, 1)
+              )}
             </div>
-            <p className="mt-2 truncate text-sm font-semibold text-[#667262]">
-              {profile.weight} · {profile.notes[0] ?? profile.personality}
-            </p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-base font-black text-[#1f2922]">{profile.name}</p>
+                <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[11px] font-bold text-[#5e6859]">
+                  {profile.breed}
+                </span>
+                <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[11px] font-bold text-[#5e6859]">
+                  {profile.age}
+                </span>
+              </div>
+              <p className="mt-2 truncate text-sm font-semibold text-[#667262]">
+                {profile.weight} · {profile.notes[0] ?? profile.personality}
+              </p>
+            </div>
+            <Link className="rounded-full bg-[#edf8ed] px-3 py-2 text-xs font-black text-[#16804b]" href="/profile">
+              보기
+            </Link>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-[#f4f7f0] px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">최근 기록</p>
+              <p className="mt-1 text-base font-black text-[#1f2922]">{latestRecords.length}</p>
+            </div>
+            <div className="rounded-2xl bg-[#fffaf0] px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">오늘 알림</p>
+              <p className="mt-1 text-base font-black text-[#1f2922]">{notifications.length}</p>
+            </div>
+            <div className="rounded-2xl bg-[#f6f9ff] px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">일정</p>
+              <p className="mt-1 text-base font-black text-[#1f2922]">{pendingSchedules}</p>
+            </div>
           </div>
         </section>
 

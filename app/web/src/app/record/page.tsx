@@ -97,15 +97,34 @@ export default function RecordPage() {
       title="기록 입력"
     >
       <div className="space-y-5">
+        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
+          <p className="text-sm font-bold text-[#16804b]">기록 준비</p>
+          <h2 className="mt-1 text-lg font-black text-[#1f2922]">오늘 케어 내용을 한 번에 정리해요</h2>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">분류</p>
+              <p className="mt-1 truncate text-sm font-black text-[#1f2922]">{categoryLabels[category]}</p>
+            </div>
+            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">AI 신뢰도</p>
+              <p className="mt-1 text-sm font-black text-[#1f2922]">{confidencePercent}%</p>
+            </div>
+            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <p className="text-[11px] font-bold text-[#778174]">입력</p>
+              <p className="mt-1 text-sm font-black text-[#1f2922]">{detail.length}/{maxLength}</p>
+            </div>
+          </div>
+        </Card>
+
         <section>
           <SectionHeader title="빠른 입력" />
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {categoryOptions.map((item) => {
               const active = item.value === category;
               return (
                 <button
                   aria-pressed={active}
-                  className={`min-h-12 rounded-2xl border px-2 text-sm font-bold transition ${
+                  className={`min-h-12 rounded-2xl border px-3 text-left text-sm font-bold transition ${
                     active
                       ? "border-[#16804b] bg-[#16804b] text-white"
                       : "border-[#dfe6d9] bg-white text-[#4a5547] shadow-[0_8px_22px_rgba(49,65,44,0.05)]"
@@ -114,7 +133,18 @@ export default function RecordPage() {
                   onClick={() => setCategory(item.value)}
                   type="button"
                 >
-                  {item.label}
+                  <span className="block">{item.label}</span>
+                  <span className={`mt-1 block text-[11px] font-semibold ${active ? "text-white/80" : "text-[#7c8777]"}`}>
+                    {item.value === "meal"
+                      ? "먹은 양"
+                      : item.value === "walk"
+                        ? "시간/거리"
+                        : item.value === "stool"
+                          ? "횟수/상태"
+                          : item.value === "medical"
+                            ? "약/진료"
+                            : "감정/반응"}
+                  </span>
                 </button>
               );
             })}
