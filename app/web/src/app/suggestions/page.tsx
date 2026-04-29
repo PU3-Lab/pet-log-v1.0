@@ -30,22 +30,42 @@ export default function SuggestionsPage() {
     () => (settings.aiInsightEnabled ? [...aiSuggestions, ...suggestions] : []),
     [aiSuggestions, settings.aiInsightEnabled],
   );
-  const filteredSuggestions = useMemo(() => {
-    if (activeFilter === "전체") {
-      return allSuggestions;
-    }
-    return allSuggestions.filter((suggestion) => suggestion.category === activeFilter);
-  }, [activeFilter, allSuggestions]);
+	  const filteredSuggestions = useMemo(() => {
+	    if (activeFilter === "전체") {
+	      return allSuggestions;
+	    }
+	    return allSuggestions.filter((suggestion) => suggestion.category === activeFilter);
+	  }, [activeFilter, allSuggestions]);
+  const urgentSuggestionCount = allSuggestions.filter((suggestion) => suggestion.tone === "orange").length;
 
-  return (
-    <AppShell subtitle="맞춤형 행동 개선 가이드" title="제안">
-      <div className="space-y-5">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {suggestionFilters.map((filter) => (
-            <Pill active={activeFilter === filter} key={filter} onClick={() => setActiveFilter(filter)}>
-              {filter}
-            </Pill>
-          ))}
+	  return (
+	    <AppShell subtitle="맞춤형 행동 개선 가이드" title="제안">
+	      <div className="space-y-5">
+	        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
+	          <p className="text-sm font-bold text-[#16804b]">오늘의 케어 제안</p>
+	          <h2 className="mt-1 text-lg font-black text-[#1f2922]">기록에서 바로 이어지는 행동 가이드</h2>
+	          <div className="mt-4 grid grid-cols-3 gap-2">
+	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+	              <p className="text-[11px] font-bold text-[#778174]">전체</p>
+	              <p className="mt-1 text-base font-black text-[#1f2922]">{allSuggestions.length}</p>
+	            </div>
+	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+	              <p className="text-[11px] font-bold text-[#778174]">확인</p>
+	              <p className="mt-1 text-base font-black text-[#bb721e]">{urgentSuggestionCount}</p>
+	            </div>
+	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+	              <p className="text-[11px] font-bold text-[#778174]">필터</p>
+	              <p className="mt-1 truncate text-base font-black text-[#1f2922]">{activeFilter}</p>
+	            </div>
+	          </div>
+	        </Card>
+
+	        <div className="grid grid-cols-4 gap-2">
+	          {suggestionFilters.map((filter) => (
+	            <Pill active={activeFilter === filter} className="w-full px-2 text-xs" key={filter} onClick={() => setActiveFilter(filter)}>
+	              {filter}
+	            </Pill>
+	          ))}
         </div>
 
         <section>

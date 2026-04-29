@@ -41,7 +41,7 @@ export default function NotificationsPage() {
   return (
     <AppShell subtitle="중요한 케어 신호" title="알림">
       <div className="space-y-5">
-        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
+	        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-bold text-[#16804b]">오늘 확인할 알림</p>
@@ -57,17 +57,31 @@ export default function NotificationsPage() {
               </button>
             ) : null}
           </div>
-          <p className="mt-2 text-sm leading-6 text-[#667262]">
-            전체 {readSummary.totalCount}개 중 읽은 알림 {readSummary.readCount}개입니다.
-          </p>
-        </Card>
-
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {filters.map((filter) => (
-            <Pill active={activeFilter === filter} key={filter} onClick={() => setActiveFilter(filter)}>
-              {filter}
-            </Pill>
-          ))}
+	          <p className="mt-2 text-sm leading-6 text-[#667262]">
+	            전체 {readSummary.totalCount}개 중 읽은 알림 {readSummary.readCount}개입니다.
+	          </p>
+	          <div className="mt-4 grid grid-cols-3 gap-2">
+	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+	              <p className="text-[11px] font-bold text-[#778174]">전체</p>
+	              <p className="mt-1 text-base font-black text-[#1f2922]">{readSummary.totalCount}</p>
+	            </div>
+	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+	              <p className="text-[11px] font-bold text-[#778174]">읽지 않음</p>
+	              <p className="mt-1 text-base font-black text-[#be4c3c]">{readSummary.unreadCount}</p>
+	            </div>
+	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+	              <p className="text-[11px] font-bold text-[#778174]">분류</p>
+	              <p className="mt-1 truncate text-base font-black text-[#1f2922]">{activeFilter}</p>
+	            </div>
+	          </div>
+	        </Card>
+	
+	        <div className="grid grid-cols-4 gap-2">
+	          {filters.map((filter) => (
+	            <Pill active={activeFilter === filter} className="w-full px-2 text-xs" key={filter} onClick={() => setActiveFilter(filter)}>
+	              {filter}
+	            </Pill>
+	          ))}
         </div>
 
         <section>

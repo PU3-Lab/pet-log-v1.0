@@ -128,6 +128,21 @@ export default function TimelinePage() {
           </button>
         </div>
 
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">전체</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{dateSummary.totalCount}</p>
+          </div>
+          <div className="rounded-2xl border border-[#f1d9af] bg-[#fffaf0] px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#9a7954]">확인</p>
+            <p className="mt-1 text-base font-black text-[#bb721e]">{dateSummary.noticeCount}</p>
+          </div>
+          <div className="rounded-2xl border border-[#f0cbc5] bg-[#fff7f5] px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#9a6b64]">주의</p>
+            <p className="mt-1 text-base font-black text-[#be4c3c]">{dateSummary.alertCount}</p>
+          </div>
+        </div>
+
         <label className="block">
           <span className="sr-only">기록 검색</span>
           <input

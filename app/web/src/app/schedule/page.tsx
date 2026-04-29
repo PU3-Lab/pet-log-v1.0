@@ -72,10 +72,14 @@ export default function SchedulePage() {
               ? `${summary.nextSchedule.title} 일정이 가장 먼저 다가옵니다.`
               : "예정된 일정이 없습니다. 접종이나 약 복용 일정을 추가해보세요."}
           </p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="rounded-2xl bg-white/75 p-3">
-              <p className="text-xs font-bold text-[#778174]">3일 내</p>
-              <p className="mt-1 text-lg font-black text-[#1f2922]">{summary.dueSoonCount}개</p>
+	          <div className="mt-4 grid grid-cols-3 gap-2">
+	            <div className="rounded-2xl bg-white/75 p-3">
+	              <p className="text-xs font-bold text-[#778174]">진행 중</p>
+	              <p className="mt-1 text-lg font-black text-[#1f2922]">{summary.totalActive}개</p>
+	            </div>
+	            <div className="rounded-2xl bg-white/75 p-3">
+	              <p className="text-xs font-bold text-[#778174]">3일 내</p>
+	              <p className="mt-1 text-lg font-black text-[#1f2922]">{summary.dueSoonCount}개</p>
             </div>
             <div className="rounded-2xl bg-white/75 p-3">
               <p className="text-xs font-bold text-[#778174]">지연</p>
@@ -88,14 +92,14 @@ export default function SchedulePage() {
           <SectionHeader title="일정 추가" />
           <Card>
             <div className="space-y-4">
-              <div>
-                <p className="mb-2 text-xs font-bold text-[#778174]">분류</p>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {categoryOptions.map(([value, label]) => (
-                    <Pill active={category === value} key={value} onClick={() => setCategory(value)}>
-                      {label}
-                    </Pill>
-                  ))}
+	              <div>
+	                <p className="mb-2 text-xs font-bold text-[#778174]">분류</p>
+	                <div className="grid grid-cols-2 gap-2">
+	                  {categoryOptions.map(([value, label]) => (
+	                    <Pill active={category === value} className="w-full px-2 text-xs" key={value} onClick={() => setCategory(value)}>
+	                      {label}
+	                    </Pill>
+	                  ))}
                 </div>
               </div>
               <label className="block">
