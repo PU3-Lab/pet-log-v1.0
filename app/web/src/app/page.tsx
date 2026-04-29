@@ -1,10 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { usePetLog } from "@/components/pet-log-provider";
 import { AiMascot, Card, CategoryBadge, SectionHeader } from "@/components/ui";
-import { petProfile, records, suggestions, todos } from "@/lib/mock-data";
+import { petProfile, suggestions, todos } from "@/lib/mock-data";
 import { PetIcon } from "@/components/pet-icons";
 
 export default function Home() {
+  const { records } = usePetLog();
   const latestRecords = records.slice(0, 3);
 
   return (
@@ -107,20 +111,27 @@ export default function Home() {
             title="최근 기록"
           />
           <div className="space-y-3">
-            {latestRecords.map((record) => (
-              <Card className="p-4" key={record.id}>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <CategoryBadge category={record.category} />
-                      <span className="text-xs font-semibold text-[#8a9286]">{record.time}</span>
+            {latestRecords.length > 0 ? (
+              latestRecords.map((record) => (
+                <Card className="p-4" key={record.id}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <CategoryBadge category={record.category} />
+                        <span className="text-xs font-semibold text-[#8a9286]">{record.time}</span>
+                      </div>
+                      <p className="mt-2 truncate text-sm font-bold text-[#1f2922]">{record.title}</p>
                     </div>
-                    <p className="mt-2 truncate text-sm font-bold text-[#1f2922]">{record.title}</p>
+                    <span className="text-[#9ba597]">›</span>
                   </div>
-                  <span className="text-[#9ba597]">›</span>
-                </div>
+                </Card>
+              ))
+            ) : (
+              <Card className="p-4">
+                <p className="text-sm font-bold text-[#1f2922]">아직 최근 기록이 없습니다.</p>
+                <p className="mt-1 text-sm leading-6 text-[#667262]">첫 기록을 저장하면 여기에 바로 표시됩니다.</p>
               </Card>
-            ))}
+            )}
           </div>
         </section>
       </div>

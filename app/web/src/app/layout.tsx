@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PetLogProvider } from "@/components/pet-log-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <PetLogProvider>{children}</PetLogProvider>
+      </body>
     </html>
   );
 }
