@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import { getAnalysisMetrics, getAnalysisReport, getCombinedAnalysisMetric, getVetBrief } from "./analysis-summary";
+import { getAnalysisMetrics, getAnalysisReport, getVetBrief, getVisibleAnalysisMetrics } from "./analysis-summary";
 import type { RecordEntry } from "./types";
 
 const records: RecordEntry[] = [
@@ -44,11 +44,17 @@ const metrics = getAnalysisMetrics(records);
 assert.equal(metrics.find((metric) => metric.id === "behavior")?.values.at(-1), 1);
 assert.equal(metrics.find((metric) => metric.id === "stool")?.trend, "최근 기록 없음");
 
-const combinedMetric = getCombinedAnalysisMetric(records);
-assert.equal(combinedMetric.id, "all");
-assert.equal(combinedMetric.label, "전체");
-assert.deepEqual(combinedMetric.values.slice(-2), [1, 2]);
-assert.ok(combinedMetric.trend.includes("3건"));
+const visibleAllMetrics = getVisibleAnalysisMetrics(metrics, "all");
+assert.deepEqual(
+  visibleAllMetrics.map((metric) => metric.id),
+  ["meal", "walk", "stool", "behavior"],
+);
+
+const visibleBehaviorMetrics = getVisibleAnalysisMetrics(metrics, "behavior");
+assert.deepEqual(
+  visibleBehaviorMetrics.map((metric) => metric.id),
+  ["behavior"],
+);
 
 const vetBrief = getVetBrief(records);
 assert.equal(vetBrief.items.length, 3);
