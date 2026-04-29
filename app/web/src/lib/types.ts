@@ -115,8 +115,20 @@ export type CommunityPost = {
   id: string;
   board: CommunityBoard;
   title: string;
+  body: string;
+  authorName: string;
+  createdAt: string;
   comments: number;
   likes: number;
   distance?: string;
   feeds: CommunityFeed[];
+  tags?: string[];
+};
+
+export type CommunityComment = {
+  id: string;
+  postId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
 };
