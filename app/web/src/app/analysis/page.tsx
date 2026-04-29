@@ -8,14 +8,12 @@ import { getAiInsights } from "@/lib/ai-insights";
 import {
   getAnalysisMetrics,
   getAnalysisReport,
-  getCombinedAnalysisMetric,
   getVetBrief,
-  type AnalysisMetric,
+  getVisibleAnalysisMetrics,
+  type AnalysisMetricFilter,
   type AnalysisRange,
   type AnalysisTone,
 } from "@/lib/analysis-summary";
-
-type MetricFilter = "all" | AnalysisMetric["id"];
 
 const reportRanges: { label: string; value: AnalysisRange }[] = [
   { label: "주간 리포트", value: "weekly" },
@@ -46,19 +44,13 @@ const chartTone: Record<AnalysisTone, string> = {
 export default function AnalysisPage() {
   const { records } = usePetLog();
   const [activeRange, setActiveRange] = useState<AnalysisRange>("weekly");
-  const [activeMetric, setActiveMetric] = useState<MetricFilter>("all");
+  const [activeMetric, setActiveMetric] = useState<AnalysisMetricFilter>("all");
 
   const summary = useMemo(() => getAnalysisReport(records, activeRange), [activeRange, records]);
   const aiInsights = useMemo(() => getAiInsights(records), [records]);
   const metrics = useMemo(() => getAnalysisMetrics(records), [records]);
-  const combinedMetric = useMemo(() => getCombinedAnalysisMetric(records), [records]);
   const vetBrief = useMemo(() => getVetBrief(records), [records]);
-  const visibleMetrics = useMemo(() => {
-    if (activeMetric === "all") {
-      return [combinedMetric];
-    }
-    return metrics.filter((metric) => metric.id === activeMetric);
-  }, [activeMetric, combinedMetric, metrics]);
+  const visibleMetrics = useMemo(() => getVisibleAnalysisMetrics(metrics, activeMetric), [activeMetric, metrics]);
 
   return (
     <AppShell subtitle="데이터를 분석하고 해석해요" title="분석 리포트">
