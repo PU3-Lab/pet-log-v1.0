@@ -4,14 +4,41 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { AiMascot, Card, CategoryBadge, SectionHeader } from "@/components/ui";
+import { getAiCareSuggestions } from "@/lib/ai-insights";
+import { getRecentChange, getRecordStatusLabel, getTodaySummary, type HomeSummaryTone } from "@/lib/home-summary";
 import { getCareNotifications } from "@/lib/notifications";
 import { suggestions, todos } from "@/lib/mock-data";
 import { PetIcon } from "@/components/pet-icons";
+
+const toneText: Record<HomeSummaryTone, string> = {
+  green: "text-[#16804b]",
+  orange: "text-[#a4651a]",
+  red: "text-[#be4c3c]",
+  blue: "text-[#356aa8]",
+};
+
+const toneDot: Record<HomeSummaryTone, string> = {
+  green: "bg-[#16804b]",
+  orange: "bg-[#d38a2d]",
+  red: "bg-[#be4c3c]",
+  blue: "bg-[#356aa8]",
+};
+
+const toneCard: Record<HomeSummaryTone, string> = {
+  green: "border-[#d8ead1] bg-[#fbfff8]",
+  orange: "border-[#f1d9af] bg-[#fffaf0]",
+  red: "border-[#f0cbc5] bg-[#fff7f5]",
+  blue: "border-[#d4e0f5] bg-[#f6f9ff]",
+};
 
 export default function Home() {
   const { profile, records } = usePetLog();
   const latestRecords = records.slice(0, 3);
   const notifications = getCareNotifications(records).slice(0, 2);
+  const todaySummary = getTodaySummary(records);
+  const recentChange = getRecentChange(records);
+  const aiSuggestions = getAiCareSuggestions(records);
+  const homeSuggestions = [...aiSuggestions, ...suggestions].slice(0, 2);
 
   return (
     <AppShell
@@ -28,6 +55,26 @@ export default function Home() {
       title={`${profile.name}의 오늘`}
     >
       <div className="space-y-5">
+        <section className="grid grid-cols-[52px_1fr] items-center gap-3 rounded-2xl border border-[#dfe6d9] bg-white p-4 shadow-[0_8px_24px_rgba(49,65,44,0.05)]">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eaf5e5] text-xl font-black text-[#16804b]">
+            {profile.name.slice(0, 1)}
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-base font-black text-[#1f2922]">{profile.name}</p>
+              <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[11px] font-bold text-[#5e6859]">
+                {profile.breed}
+              </span>
+              <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[11px] font-bold text-[#5e6859]">
+                {profile.age}
+              </span>
+            </div>
+            <p className="mt-2 truncate text-sm font-semibold text-[#667262]">
+              {profile.weight} · {profile.notes[0] ?? profile.personality}
+            </p>
+          </div>
+        </section>
+
         <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
           <div className="flex gap-3">
             <AiMascot />
@@ -56,14 +103,16 @@ export default function Home() {
           />
           <div className="space-y-3">
             {notifications.map((notification) => (
-              <Card className="p-4" key={notification.id}>
+              <Card className={`border-l-4 p-4 ${toneCard[notification.tone]}`} key={notification.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#16804b]">{notification.category} · {notification.dueLabel}</p>
+                    <p className={`text-xs font-bold ${toneText[notification.tone]}`}>
+                      {notification.category} · {notification.dueLabel}
+                    </p>
                     <h3 className="mt-1 text-sm font-bold text-[#1f2922]">{notification.title}</h3>
                     <p className="mt-1 text-xs leading-5 text-[#667262]">{notification.detail}</p>
                   </div>
-                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#be4c3c]" />
+                  <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot[notification.tone]}`} />
                 </div>
               </Card>
             ))}
@@ -73,18 +122,28 @@ export default function Home() {
         <section>
           <SectionHeader title="오늘 요약" />
           <div className="grid grid-cols-3 gap-2">
-            {[
-              ["식사", "줄어듦", "주의"],
-              ["활동량", "보통", "안정"],
-              ["배변", "정상", "좋음"],
-            ].map(([label, value, state]) => (
-              <Card className="p-3 text-center" key={label}>
-                <p className="text-xs font-bold text-[#788276]">{label}</p>
-                <p className="mt-2 text-sm font-black text-[#1f2922]">{value}</p>
-                <p className="mt-1 text-[11px] font-semibold text-[#16804b]">{state}</p>
+            {todaySummary.map((item) => (
+              <Card className={`p-3 text-center ${toneCard[item.tone]}`} key={item.category}>
+                <p className="text-xs font-bold text-[#788276]">{item.label}</p>
+                <p className="mt-2 truncate text-sm font-black text-[#1f2922]">{item.value}</p>
+                <p className={`mt-1 text-[11px] font-semibold ${toneText[item.tone]}`}>{item.state}</p>
               </Card>
             ))}
           </div>
+        </section>
+
+        <section>
+          <SectionHeader title="최근 변화" />
+          <Card className={`border-l-4 p-4 ${toneCard[recentChange.tone]}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className={`text-xs font-bold ${toneText[recentChange.tone]}`}>{recentChange.label}</p>
+                <h3 className="mt-1 text-sm font-black text-[#1f2922]">{recentChange.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#62705f]">{recentChange.detail}</p>
+              </div>
+              <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot[recentChange.tone]}`} />
+            </div>
+          </Card>
         </section>
 
         <section>
@@ -97,7 +156,7 @@ export default function Home() {
             title="AI 제안"
           />
           <div className="space-y-3">
-            {suggestions.slice(0, 2).map((suggestion) => (
+            {homeSuggestions.map((suggestion) => (
               <Card className="p-4" key={suggestion.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -148,6 +207,9 @@ export default function Home() {
                         <span className="text-xs font-semibold text-[#8a9286]">{record.time}</span>
                       </div>
                       <p className="mt-2 truncate text-sm font-bold text-[#1f2922]">{record.title}</p>
+                      <p className={`mt-1 text-xs font-bold ${toneText[getRecordStatusLabel(record).tone]}`}>
+                        {getRecordStatusLabel(record).label}
+                      </p>
                     </div>
                     <span className="text-[#9ba597]">›</span>
                   </div>
