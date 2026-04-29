@@ -24,6 +24,17 @@ export type AnalysisMetric = {
 
 export type AnalysisMetricFilter = "all" | AnalysisMetric["id"];
 
+export type AnalysisTrendSeries = Pick<AnalysisMetric, "id" | "label" | "values"> & {
+  color: string;
+};
+
+export type AnalysisTrendChart = {
+  title: string;
+  detail: string;
+  unit: string;
+  tone: AnalysisTone;
+  series: AnalysisTrendSeries[];
+};
 
 export type AnalysisReport = {
   period: string;
@@ -40,6 +51,12 @@ export type VetBrief = {
 
 const reportCategories: RecordCategory[] = ["meal", "walk", "stool", "behavior"];
 const metricCategories: AnalysisMetric["id"][] = ["meal", "walk", "stool", "behavior"];
+const metricChartColors: Record<AnalysisMetric["id"], string> = {
+  meal: "#16804b",
+  walk: "#df8f24",
+  stool: "#a4651a",
+  behavior: "#356aa8",
+};
 
 const statusView: Record<RecordStatus, { value: string; tone: AnalysisTone }> = {
   normal: { value: "안정", tone: "green" },
@@ -89,6 +106,25 @@ export function getVisibleAnalysisMetrics(metrics: AnalysisMetric[], activeMetri
   return metrics.filter((metric) => metric.id === activeMetric);
 }
 
+export function getAnalysisTrendChart(metrics: AnalysisMetric[], activeMetric: AnalysisMetricFilter): AnalysisTrendChart {
+  const visibleMetrics = getVisibleAnalysisMetrics(metrics, activeMetric);
+  const primaryMetric = visibleMetrics[0];
+  const isAll = activeMetric === "all";
+
+  return {
+    title: isAll ? "전체 변화" : primaryMetric?.label ?? "변화 추이",
+    detail: isAll ? "식사 · 산책 · 배변 · 행동 흐름" : primaryMetric?.trend ?? "최근 기록 없음",
+    unit: primaryMetric?.unit ?? "건",
+    tone: getTrendChartTone(visibleMetrics),
+    series: visibleMetrics.map((metric) => ({
+      id: metric.id,
+      label: metric.label,
+      values: metric.values,
+      color: metricChartColors[metric.id],
+    })),
+  };
+}
+
 export function getVetBrief(records: RecordEntry[]): VetBrief {
   const recentRecords = records.slice(0, 3);
   const hasAlert = records.some((record) => record.status === "alert");
@@ -103,6 +139,18 @@ export function getVetBrief(records: RecordEntry[]): VetBrief {
         ? recentRecords.map((record) => `${record.date} ${record.time} · ${categoryLabels[record.category]} · ${record.title}`)
         : ["아직 제출용으로 정리할 기록이 없습니다."],
   };
+}
+
+function getTrendChartTone(metrics: AnalysisMetric[]): AnalysisTone {
+  if (metrics.some((metric) => metric.tone === "red")) {
+    return "red";
+  }
+
+  if (metrics.some((metric) => metric.tone === "orange")) {
+    return "orange";
+  }
+
+  return metrics.some((metric) => metric.tone === "green") ? "green" : "blue";
 }
 
 function createReportCard(category: RecordCategory, records: RecordEntry[]): AnalysisCard {

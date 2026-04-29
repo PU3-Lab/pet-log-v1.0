@@ -97,6 +97,54 @@ export function MiniLineChart({ values, tone = "#16804b" }: { values: number[]; 
   );
 }
 
+export type MultiLineChartSeries = {
+  label: string;
+  values: number[];
+  color: string;
+};
+
+export function MultiLineChart({ series }: { series: MultiLineChartSeries[] }) {
+  const width = 220;
+  const height = 104;
+  const allValues = series.flatMap((item) => item.values);
+  const min = Math.min(0, ...allValues);
+  const max = Math.max(1, ...allValues);
+  const range = max - min || 1;
+
+  const getPoint = (value: number, index: number, length: number) => {
+    const x = length > 1 ? (index / (length - 1)) * width : width / 2;
+    const y = height - ((value - min) / range) * (height - 24) - 12;
+    return { x, y };
+  };
+
+  return (
+    <svg aria-label="변화 추이 그래프" className="h-[112px] w-full" role="img" viewBox={`0 0 ${width} ${height}`}>
+      {[0, 1, 2].map((line) => {
+        const y = 12 + line * 38;
+        return <line key={line} stroke="#e8ede3" strokeDasharray="3 5" strokeWidth="1" x1="0" x2={width} y1={y} y2={y} />;
+      })}
+      {series.map((item) => {
+        const points = item.values
+          .map((value, index) => {
+            const point = getPoint(value, index, item.values.length);
+            return `${point.x},${point.y}`;
+          })
+          .join(" ");
+
+        return (
+          <g key={item.label}>
+            <polyline fill="none" points={points} stroke={item.color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+            {item.values.map((value, index) => {
+              const point = getPoint(value, index, item.values.length);
+              return <circle cx={point.x} cy={point.y} fill="white" key={`${item.label}-${index}`} r="2.7" stroke={item.color} strokeWidth="1.8" />;
+            })}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 export function AiMascot() {
   return (
     <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#caead5] bg-[#f4fff7] text-lg font-black text-[#16804b] shadow-inner">

@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
-import { Card, MiniLineChart, Pill, SectionHeader } from "@/components/ui";
+import { Card, MultiLineChart, Pill, SectionHeader } from "@/components/ui";
 import { getAiInsights } from "@/lib/ai-insights";
 import {
   getAnalysisMetrics,
   getAnalysisReport,
+  getAnalysisTrendChart,
   getVetBrief,
-  getVisibleAnalysisMetrics,
   type AnalysisMetricFilter,
   type AnalysisRange,
   type AnalysisTone,
@@ -34,13 +34,6 @@ const toneCard: Record<AnalysisTone, string> = {
   blue: "border-[#d4e0f5] bg-[#f6f9ff]",
 };
 
-const chartTone: Record<AnalysisTone, string> = {
-  green: "#16804b",
-  orange: "#df8f24",
-  red: "#be4c3c",
-  blue: "#356aa8",
-};
-
 export default function AnalysisPage() {
   const { records } = usePetLog();
   const [activeRange, setActiveRange] = useState<AnalysisRange>("weekly");
@@ -50,7 +43,7 @@ export default function AnalysisPage() {
   const aiInsights = useMemo(() => getAiInsights(records), [records]);
   const metrics = useMemo(() => getAnalysisMetrics(records), [records]);
   const vetBrief = useMemo(() => getVetBrief(records), [records]);
-  const visibleMetrics = useMemo(() => getVisibleAnalysisMetrics(metrics, activeMetric), [activeMetric, metrics]);
+  const trendChart = useMemo(() => getAnalysisTrendChart(metrics, activeMetric), [activeMetric, metrics]);
 
   return (
     <AppShell subtitle="데이터를 분석하고 해석해요" title="분석 리포트">
@@ -90,22 +83,26 @@ export default function AnalysisPage() {
               </Pill>
             ))}
           </div>
-          <div className="space-y-3">
-            {visibleMetrics.map((metric) => (
-              <Card className={toneCard[metric.tone]} key={metric.label}>
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-bold text-[#1f2922]">{metric.label}</h3>
-                    <p className="text-xs font-semibold text-[#7b8576]">{metric.trend}</p>
-                  </div>
-                  <span className={`rounded-full bg-white/75 px-3 py-1 text-xs font-bold ${toneText[metric.tone]}`}>
-                    {metric.unit}
-                  </span>
-                </div>
-                <MiniLineChart tone={chartTone[metric.tone]} values={metric.values} />
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-[#1f2922]">{trendChart.title}</h3>
+                <p className="mt-1 text-xs font-semibold text-[#7b8576]">{trendChart.detail}</p>
+              </div>
+              <span className={`rounded-full bg-[#f4f7f0] px-3 py-1 text-xs font-bold ${toneText[trendChart.tone]}`}>
+                {trendChart.unit}
+              </span>
+            </div>
+            <div className="mb-2 flex flex-wrap gap-3">
+              {trendChart.series.map((series) => (
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#667262]" key={series.id}>
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />
+                  {series.label}
+                </span>
+              ))}
+            </div>
+            <MultiLineChart series={trendChart.series} />
+          </Card>
         </section>
 
         <section>
