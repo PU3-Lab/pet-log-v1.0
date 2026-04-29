@@ -26,3 +26,10 @@ export function getProfilePhotoError(file: ProfilePhotoFile) {
 export function canUseProfileCameraStream(source: ProfileCameraSource) {
   return typeof source.mediaDevices?.getUserMedia === "function";
 }
+
+export function getProfileCameraConstraints(): MediaStreamConstraints {
+  return {
+    audio: false,
+    video: { facingMode: { ideal: "environment" } },
+  };
+}

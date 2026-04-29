@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, MiniLineChart, Pill, SectionHeader } from "@/components/ui";
 import { metrics } from "@/lib/mock-data";
-import { canUseProfileCameraStream, getProfilePhotoError } from "@/lib/profile-photo";
+import { canUseProfileCameraStream, getProfileCameraConstraints, getProfilePhotoError } from "@/lib/profile-photo";
 import type { PetProfile } from "@/lib/types";
 
 const emptyProfile: PetProfile = {
@@ -29,6 +29,8 @@ export default function ProfilePage() {
   const streamRef = useRef<MediaStream | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState<"idle" | "loading" | "ready">("idle");
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [draft, setDraft] = useState<PetProfile>(profile);
   const [notesText, setNotesText] = useState(profile.notes.join("\n"));
   const [error, setError] = useState("");
@@ -39,9 +41,52 @@ export default function ProfilePage() {
     };
   }, []);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!isCameraOpen || !cameraStream || !video) {
+      return;
+    }
+
+    const currentVideo = video;
+    let cancelled = false;
+    currentVideo.srcObject = cameraStream;
+
+    async function playVideo() {
+      try {
+        await currentVideo.play();
+        if (!cancelled) {
+          setCameraStatus("ready");
+        }
+      } catch {
+        if (!cancelled) {
+          setError("카메라 화면을 재생하지 못했습니다. 권한을 확인하거나 다시 촬영을 눌러주세요.");
+          setCameraStatus("loading");
+        }
+      }
+    }
+
+    if (currentVideo.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      void playVideo();
+    } else {
+      currentVideo.onloadedmetadata = () => {
+        void playVideo();
+      };
+    }
+
+    return () => {
+      cancelled = true;
+      currentVideo.onloadedmetadata = null;
+      if (currentVideo.srcObject === cameraStream) {
+        currentVideo.srcObject = null;
+      }
+    };
+  }, [cameraStream, isCameraOpen]);
+
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    setCameraStream(null);
+    setCameraStatus("idle");
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -107,22 +152,18 @@ export default function ProfilePage() {
     }
 
     try {
-      stopCamera();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-      streamRef.current = stream;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      setCameraStream(null);
       setIsCameraOpen(true);
+      setCameraStatus("loading");
 
-      window.setTimeout(() => {
-        if (!videoRef.current) {
-          return;
-        }
-        videoRef.current.srcObject = stream;
-        void videoRef.current.play();
-      }, 0);
+      const stream = await navigator.mediaDevices.getUserMedia(getProfileCameraConstraints());
+      streamRef.current = stream;
+      setCameraStream(stream);
     } catch {
+      setCameraStatus("idle");
+      setIsCameraOpen(false);
       setError("카메라를 열 수 없습니다. 권한을 허용하거나 사진 업로드를 사용해주세요.");
       cameraInputRef.current?.click();
     }
@@ -256,13 +297,20 @@ export default function ProfilePage() {
               </div>
               {isCameraOpen ? (
                 <div className="rounded-2xl border border-[#d8e1f2] bg-[#f6f9ff] p-3">
-                  <video
-                    autoPlay
-                    className="aspect-[4/3] w-full rounded-2xl bg-[#1f2922] object-cover"
-                    muted
-                    playsInline
-                    ref={videoRef}
-                  />
+                  <div className="relative overflow-hidden rounded-2xl bg-[#1f2922]">
+                    <video
+                      autoPlay
+                      className="aspect-[4/3] w-full object-cover"
+                      muted
+                      playsInline
+                      ref={videoRef}
+                    />
+                    {cameraStatus === "loading" ? (
+                      <div className="absolute inset-0 grid place-items-center bg-[#1f2922] px-4 text-center text-sm font-bold text-white">
+                        카메라 화면을 불러오는 중입니다
+                      </div>
+                    ) : null}
+                  </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
                       className="h-11 rounded-xl border border-[#dce5d5] bg-white text-sm font-bold text-[#40513f]"
@@ -272,7 +320,8 @@ export default function ProfilePage() {
                       닫기
                     </button>
                     <button
-                      className="h-11 rounded-xl bg-[#356aa8] text-sm font-bold text-white"
+                      className="h-11 rounded-xl bg-[#356aa8] text-sm font-bold text-white disabled:bg-[#b9c9d8]"
+                      disabled={cameraStatus !== "ready"}
                       onClick={captureCameraPhoto}
                       type="button"
                     >
