@@ -1,5 +1,6 @@
 import { strict as assert } from "node:assert";
 import { getCareNotifications } from "./notifications";
+import { defaultNotificationPreferences } from "./settings";
 import type { RecordEntry } from "./types";
 
 const baseRecords: RecordEntry[] = [
@@ -17,6 +18,12 @@ const baseRecords: RecordEntry[] = [
 const missingCare = getCareNotifications(baseRecords);
 assert.ok(missingCare.some((notification) => notification.id === "missing-stool"));
 assert.ok(missingCare.some((notification) => notification.id === "missing-walk"));
+
+const disabledMissingRecordCare = getCareNotifications(baseRecords, [], "2026-04-29", {
+  ...defaultNotificationPreferences,
+  missingRecord: false,
+});
+assert.ok(!disabledMissingRecordCare.some((notification) => notification.category === "기록"));
 
 const alertCare = getCareNotifications([
   {
