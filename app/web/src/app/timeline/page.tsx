@@ -5,9 +5,8 @@ import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, Pill, SectionHeader } from "@/components/ui";
 import { categoryLabels } from "@/lib/mock-data";
-import type { RecordCategory } from "@/lib/types";
-
-type TimelineFilter = "all" | RecordCategory;
+import { getTimelineDates, getTimelineDetail, getTimelineRecords, getTimelineSummary, type TimelineFilter } from "@/lib/timeline";
+import type { RecordCategory, RecordEntry, RecordStatus } from "@/lib/types";
 
 const timelineFilters: { label: string; value: TimelineFilter }[] = [
   { label: "전체", value: "all" },
@@ -18,24 +17,50 @@ const timelineFilters: { label: string; value: TimelineFilter }[] = [
   { label: "행동", value: "behavior" },
 ];
 
+const statusText: Record<RecordStatus, string> = {
+  normal: "text-[#16804b]",
+  notice: "text-[#bb721e]",
+  alert: "text-[#be4c3c]",
+};
+
 export default function TimelinePage() {
   const { deleteRecord, records, updateRecord } = usePetLog();
   const [activeFilter, setActiveFilter] = useState<TimelineFilter>("all");
+  const [activeDateIndex, setActiveDateIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<RecordCategory>("meal");
   const [editingDetail, setEditingDetail] = useState("");
   const [editingError, setEditingError] = useState("");
 
-  const filteredRecords = useMemo(() => {
-    if (activeFilter === "all") {
-      return records;
-    }
-    return records.filter((record) => record.category === activeFilter);
-  }, [activeFilter, records]);
+  const timelineDates = useMemo(() => getTimelineDates(records), [records]);
+  const activeDate = timelineDates[activeDateIndex] ?? timelineDates[0];
+  const dateSummary = useMemo(() => getTimelineSummary(records, activeDate), [activeDate, records]);
+  const filteredRecords = useMemo(
+    () => getTimelineRecords(records, { date: activeDate, filter: activeFilter, query: searchQuery }),
+    [activeDate, activeFilter, records, searchQuery],
+  );
+  const selectedRecord = useMemo(
+    () => records.find((record) => record.id === selectedRecordId) ?? null,
+    [records, selectedRecordId],
+  );
+  const selectedDetail = selectedRecord ? getTimelineDetail(selectedRecord) : null;
 
-  const activeTitle = activeFilter === "all" ? "오늘 기록" : `${categoryLabels[activeFilter]} 기록`;
+  const activeTitle = activeFilter === "all" ? "기록 목록" : `${categoryLabels[activeFilter]} 기록`;
 
-  function startEdit(record: (typeof records)[number]) {
+  function moveDate(direction: -1 | 1) {
+    setActiveDateIndex((current) => {
+      const next = current + direction;
+      if (next < 0 || next >= timelineDates.length) {
+        return current;
+      }
+      return next;
+    });
+    setSelectedRecordId(null);
+  }
+
+  function startEdit(record: RecordEntry) {
     setEditingId(record.id);
     setEditingCategory(record.category);
     setEditingDetail(record.detail);
@@ -68,6 +93,9 @@ export default function TimelinePage() {
     if (editingId === recordId) {
       cancelEdit();
     }
+    if (selectedRecordId === recordId) {
+      setSelectedRecordId(null);
+    }
     deleteRecord(recordId);
   }
 
@@ -75,17 +103,54 @@ export default function TimelinePage() {
     <AppShell subtitle="날짜별 기록을 한눈에" title="기록 타임라인">
       <div className="space-y-5">
         <div className="flex items-center justify-between rounded-2xl border border-[#dfe6d9] bg-white p-3">
-          <button className="h-9 w-9 rounded-full bg-[#f1f5ed] font-bold text-[#596456]">‹</button>
+          <button
+            aria-label="이전 날짜"
+            className="h-9 w-9 rounded-full bg-[#f1f5ed] font-bold text-[#596456] disabled:opacity-40"
+            disabled={activeDateIndex >= timelineDates.length - 1}
+            onClick={() => moveDate(1)}
+            type="button"
+          >
+            ‹
+          </button>
           <div className="text-center">
-            <p className="text-xs font-semibold text-[#7c8777]">2026년 4월</p>
-            <p className="text-base font-black text-[#1f2922]">4월 17일 금요일</p>
+            <p className="text-xs font-semibold text-[#7c8777]">{dateSummary.noticeLabel}</p>
+            <p className="text-base font-black text-[#1f2922]">{activeDate ?? "기록 없음"}</p>
+            <p className="mt-1 text-xs font-bold text-[#16804b]">{dateSummary.totalCount}개 기록</p>
           </div>
-          <button className="h-9 w-9 rounded-full bg-[#f1f5ed] font-bold text-[#596456]">›</button>
+          <button
+            aria-label="다음 날짜"
+            className="h-9 w-9 rounded-full bg-[#f1f5ed] font-bold text-[#596456] disabled:opacity-40"
+            disabled={activeDateIndex <= 0}
+            onClick={() => moveDate(-1)}
+            type="button"
+          >
+            ›
+          </button>
         </div>
+
+        <label className="block">
+          <span className="sr-only">기록 검색</span>
+          <input
+            className="h-12 w-full rounded-2xl border border-[#dfe6d9] bg-white px-4 text-sm font-semibold text-[#263022] outline-none focus:border-[#16804b] focus:ring-2 focus:ring-[#16804b]/15"
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setSelectedRecordId(null);
+            }}
+            placeholder="검색어를 입력하세요"
+            value={searchQuery}
+          />
+        </label>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
           {timelineFilters.map((filter) => (
-            <Pill active={activeFilter === filter.value} key={filter.value} onClick={() => setActiveFilter(filter.value)}>
+            <Pill
+              active={activeFilter === filter.value}
+              key={filter.value}
+              onClick={() => {
+                setActiveFilter(filter.value);
+                setSelectedRecordId(null);
+              }}
+            >
               {filter.label}
             </Pill>
           ))}
@@ -147,16 +212,43 @@ export default function TimelinePage() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[#7a8374]">{record.time}</span>
-                            <CategoryBadge category={record.category} />
+                      <button className="w-full text-left" onClick={() => setSelectedRecordId(record.id)} type="button">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-[#7a8374]">{record.time}</span>
+                              <CategoryBadge category={record.category} />
+                            </div>
+                            <h3 className="mt-2 text-sm font-bold text-[#1f2922]">{record.title}</h3>
+                            <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#667262]">{record.detail}</p>
                           </div>
-                          <h3 className="mt-2 text-sm font-bold text-[#1f2922]">{record.title}</h3>
-                          <p className="mt-1 text-sm leading-6 text-[#667262]">{record.detail}</p>
+                          <span className="mt-1 text-[#9ba597]">›</span>
                         </div>
-                      </div>
+                      </button>
+                      {selectedRecordId === record.id && selectedDetail ? (
+                        <div className="rounded-2xl border border-[#dfe8d9] bg-[#fbfdf8] p-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-black ${statusText[record.status]}`}>{selectedDetail.statusLabel}</span>
+                            <span className="text-xs font-bold text-[#8a9286]">{selectedDetail.categoryLabel}</span>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-[#4d584a]">{selectedDetail.statusDetail}</p>
+                          <p className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold leading-5 text-[#667262]">
+                            {selectedDetail.aiSummary}
+                          </p>
+                          {selectedDetail.measurements.length > 0 ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {selectedDetail.measurements.map((measurement) => (
+                                <span
+                                  className="rounded-full bg-[#edf8ed] px-2.5 py-1 text-xs font-bold text-[#16804b]"
+                                  key={`${measurement.label}-${measurement.value}`}
+                                >
+                                  {measurement.label} {measurement.value}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           className="h-9 rounded-xl border border-[#dce5d5] bg-white text-sm font-bold text-[#40513f]"
@@ -182,7 +274,7 @@ export default function TimelinePage() {
             <Card className="p-5 text-center">
               <h3 className="text-sm font-bold text-[#1f2922]">표시할 기록이 없습니다.</h3>
               <p className="mt-2 text-sm leading-6 text-[#667262]">
-                선택한 필터에 맞는 기록이 없습니다. 다른 필터를 보거나 새 기록을 남겨보세요.
+                선택한 날짜, 검색어, 필터에 맞는 기록이 없습니다. 조건을 바꾸거나 새 기록을 남겨보세요.
               </p>
             </Card>
           )}
