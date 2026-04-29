@@ -4,11 +4,11 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { AiMascot, Card, CategoryBadge, SectionHeader } from "@/components/ui";
-import { petProfile, suggestions, todos } from "@/lib/mock-data";
+import { suggestions, todos } from "@/lib/mock-data";
 import { PetIcon } from "@/components/pet-icons";
 
 export default function Home() {
-  const { records } = usePetLog();
+  const { profile, records } = usePetLog();
   const latestRecords = records.slice(0, 3);
 
   return (
@@ -23,7 +23,7 @@ export default function Home() {
         </Link>
       }
       subtitle="AI가 먼저 케어해주는 홈"
-      title={`${petProfile.name}의 오늘`}
+      title={`${profile.name}의 오늘`}
     >
       <div className="space-y-5">
         <Card className="bg-gradient-to-br from-white to-[#edf8ed]">

@@ -16,6 +16,20 @@ const categoryOptions: { label: string; value: RecordCategory }[] = [
   { label: "행동", value: "behavior" },
 ];
 
+type InputMode = "text" | "voice" | "photo";
+
+const inputModes: { label: string; value: InputMode }[] = [
+  { label: "텍스트", value: "text" },
+  { label: "음성", value: "voice" },
+  { label: "사진", value: "photo" },
+];
+
+const inputPlaceholders: Record<InputMode, string> = {
+  text: "예: 아침 사료 50g을 먹고 산책 20분을 했어요.",
+  voice: "음성으로 남길 내용을 확인하거나 직접 수정해주세요.",
+  photo: "사진과 함께 남길 메모를 입력해주세요.",
+};
+
 const defaultDetail = "오늘 아침에 50g 사료 먹고, 간식 조금 줬어. 낮에 산책 20분 했고 밤에 배변 1번 했어.";
 const maxLength = 500;
 
@@ -23,6 +37,7 @@ export default function RecordPage() {
   const { addRecord, records } = usePetLog();
   const [detail, setDetail] = useState(defaultDetail);
   const [category, setCategory] = useState<RecordCategory>("meal");
+  const [inputMode, setInputMode] = useState<InputMode>("text");
   const [error, setError] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
 
@@ -84,21 +99,26 @@ export default function RecordPage() {
                 setSavedId(null);
               }
             }}
-            placeholder="예: 아침 사료 50g을 먹고 산책 20분을 했어요."
+            placeholder={inputPlaceholders[inputMode]}
             value={detail}
           />
           <div className="mt-3 grid grid-cols-3 gap-2">
-            {["텍스트", "음성", "사진"].map((item, index) => (
-              <button
-                className={`h-10 rounded-xl border text-sm font-bold ${
-                  index === 0 ? "border-[#16804b] bg-[#e7f4eb] text-[#0b7a43]" : "border-[#dce5d5] bg-white text-[#40513f]"
-                }`}
-                key={item}
-                type="button"
-              >
-                {item}
-              </button>
-            ))}
+            {inputModes.map((mode) => {
+              const active = inputMode === mode.value;
+              return (
+                <button
+                  aria-pressed={active}
+                  className={`h-10 rounded-xl border text-sm font-bold ${
+                    active ? "border-[#16804b] bg-[#e7f4eb] text-[#0b7a43]" : "border-[#dce5d5] bg-white text-[#40513f]"
+                  }`}
+                  key={mode.value}
+                  onClick={() => setInputMode(mode.value)}
+                  type="button"
+                >
+                  {mode.label}
+                </button>
+              );
+            })}
           </div>
           {error ? <p className="mt-3 text-sm font-semibold text-[#be4c3c]">{error}</p> : null}
           {savedId ? (
