@@ -229,9 +229,9 @@ export default function CommunityPage() {
 
           {isComposerOpen ? (
             <Card className="mt-3">
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="grid grid-cols-2 gap-2">
                 {communityBoards.map((board) => (
-                  <Pill active={draftBoard === board} key={board} onClick={() => setDraftBoard(board)}>
+                  <Pill active={draftBoard === board} className="w-full px-2 text-xs" key={board} onClick={() => setDraftBoard(board)}>
                     {board}
                   </Pill>
                 ))}
