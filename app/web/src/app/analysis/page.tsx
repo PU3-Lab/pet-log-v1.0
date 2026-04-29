@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { usePetLog } from "@/components/pet-log-provider";
 import { Card, MiniLineChart, Pill, SectionHeader } from "@/components/ui";
+import { getAiInsights } from "@/lib/ai-insights";
 import { metrics } from "@/lib/mock-data";
 import type { MetricSeries } from "@/lib/types";
 
@@ -40,10 +42,12 @@ const reportSummaries: Record<ReportRange, { period: string; title: string; item
 };
 
 export default function AnalysisPage() {
+  const { records } = usePetLog();
   const [activeRange, setActiveRange] = useState<ReportRange>("weekly");
   const [activeMetric, setActiveMetric] = useState<MetricFilter>("all");
 
   const summary = reportSummaries[activeRange];
+  const aiInsights = useMemo(() => getAiInsights(records), [records]);
   const visibleMetrics = useMemo(() => {
     if (activeMetric === "all") {
       return metrics;
@@ -106,11 +110,29 @@ export default function AnalysisPage() {
           </div>
         </section>
 
-        <Card>
-          <p className="text-sm font-bold text-[#16804b]">AI 분석 결과</p>
-          <h2 className="mt-2 text-base font-black text-[#1f2922]">최근 활동량이 감소했습니다</h2>
-          <p className="mt-2 text-sm leading-6 text-[#667262]">
-            {summary.insight} 짧은 산책을 하루 2회로 나누면 부담을 줄이면서 활동 리듬을 회복할 수 있어요.
+        <section>
+          <SectionHeader title="AI 분석 결과" />
+          <div className="space-y-3">
+            {aiInsights.map((insight) => (
+              <Card key={insight.id}>
+                <p
+                  className={`text-sm font-bold ${
+                    insight.tone === "red" ? "text-[#be4c3c]" : insight.tone === "orange" ? "text-[#bb721e]" : "text-[#16804b]"
+                  }`}
+                >
+                  {insight.tone === "red" ? "주의" : insight.tone === "orange" ? "확인 필요" : "안정"}
+                </p>
+                <h2 className="mt-2 text-base font-black text-[#1f2922]">{insight.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-[#667262]">{insight.detail}</p>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <Card className="bg-[#fffaf0]">
+          <p className="text-sm font-bold text-[#b56d19]">안전 안내</p>
+          <p className="mt-2 text-sm leading-6 text-[#65533a]">
+            AI 분석은 저장된 기록을 바탕으로 한 참고 정보입니다. 확정 진단이 아니며, 증상이 지속되거나 심하면 병원 상담을 권장합니다.
           </p>
         </Card>
       </div>

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
+import { structureRecord } from "@/lib/ai-insights";
 import { categoryLabels } from "@/lib/mock-data";
 import type { RecordCategory } from "@/lib/types";
 
@@ -44,6 +45,8 @@ export default function RecordPage() {
   const preview = records.slice(0, 3);
   const trimmedDetail = detail.trim();
   const isInvalid = trimmedDetail.length < 5 || trimmedDetail.length > maxLength;
+  const aiPreview = useMemo(() => structureRecord(trimmedDetail, category), [category, trimmedDetail]);
+  const confidencePercent = Math.round(aiPreview.confidence * 100);
 
   const previewTitle = useMemo(() => {
     if (!trimmedDetail) {
@@ -132,18 +135,48 @@ export default function RecordPage() {
         </Card>
 
         <section>
-          <SectionHeader title="자동 분류 미리보기" />
+          <SectionHeader title="AI 구조화 미리보기" />
           <div className="space-y-3">
             <Card className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <CategoryBadge category={category} />
-                  <h3 className="mt-2 text-sm font-bold text-[#1f2922]">{previewTitle}</h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CategoryBadge category={aiPreview.suggestedCategory} />
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${aiPreview.needsConfirmation ? "bg-[#fff2df] text-[#a4651a]" : "bg-[#e8f5df] text-[#32783c]"}`}>
+                      신뢰도 {confidencePercent}%
+                    </span>
+                  </div>
+                  <h3 className="mt-2 text-sm font-bold text-[#1f2922]">{aiPreview.normalizedSummary || previewTitle}</h3>
                   <p className="mt-1 text-xs leading-5 text-[#6c7667]">
-                    {trimmedDetail || "입력한 내용을 저장하면 타임라인에 같은 내용으로 추가됩니다."}
+                    {aiPreview.needsConfirmation
+                      ? "AI 분류가 애매합니다. 카테고리와 내용을 확인한 뒤 저장해주세요."
+                      : "입력한 내용이 구조화되어 저장됩니다. 필요하면 저장 전 수정할 수 있습니다."}
                   </p>
                 </div>
-                <span className="text-sm font-bold text-[#16804b]">{categoryLabels[category]}</span>
+                <span className="text-sm font-bold text-[#16804b]">{categoryLabels[aiPreview.suggestedCategory]}</span>
+              </div>
+              {aiPreview.suggestedCategory !== category ? (
+                <button
+                  className="mt-3 h-10 w-full rounded-xl border border-[#cfe2cd] bg-[#f4faf2] text-sm font-bold text-[#16804b]"
+                  onClick={() => setCategory(aiPreview.suggestedCategory)}
+                  type="button"
+                >
+                  AI 추천 분류 적용
+                </button>
+              ) : null}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {aiPreview.measurements.length > 0 ? (
+                  aiPreview.measurements.map((measurement) => (
+                    <div className="rounded-xl bg-[#f4f7f0] px-3 py-2" key={`${measurement.label}-${measurement.value}`}>
+                      <p className="text-[11px] font-bold text-[#7b8576]">{measurement.label}</p>
+                      <p className="mt-1 text-sm font-black text-[#1f2922]">{measurement.value}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-2 rounded-xl bg-[#f4f7f0] px-3 py-2">
+                    <p className="text-xs font-semibold leading-5 text-[#667262]">추출된 수치가 없습니다. 필요하면 g, kg, 분, 회 같은 단위를 함께 적어주세요.</p>
+                  </div>
+                )}
               </div>
             </Card>
             {preview.map((record) => (
@@ -182,15 +215,17 @@ export default function RecordPage() {
           </div>
         </section>
 
-        <button
-          className={`h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] ${
-            isInvalid ? "bg-[#8ab99f]" : "bg-[#16804b]"
-          }`}
-          onClick={handleSave}
-          type="button"
-        >
-          기록 저장하기
-        </button>
+        <div className="sticky bottom-0 z-20 -mx-5 border-t border-[#e0e6da] bg-[#f8faf5]/95 px-5 pb-3 pt-3 shadow-[0_-12px_28px_rgba(46,63,42,0.08)] backdrop-blur">
+          <button
+            className={`h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] ${
+              isInvalid ? "bg-[#8ab99f]" : "bg-[#16804b]"
+            }`}
+            onClick={handleSave}
+            type="button"
+          >
+            기록 저장하기
+          </button>
+        </div>
       </div>
     </AppShell>
   );

@@ -2,6 +2,20 @@ export type RecordCategory = "meal" | "walk" | "stool" | "medical" | "behavior";
 
 export type RecordStatus = "normal" | "notice" | "alert";
 
+export type ExtractedMeasurement = {
+  label: string;
+  value: string;
+};
+
+export type StructuredRecord = {
+  sourceText: string;
+  normalizedSummary: string;
+  suggestedCategory: RecordCategory;
+  confidence: number;
+  measurements: ExtractedMeasurement[];
+  needsConfirmation: boolean;
+};
+
 export type PetProfile = {
   name: string;
   breed: string;
@@ -21,6 +35,7 @@ export type RecordEntry = {
   title: string;
   detail: string;
   status: RecordStatus;
+  structured?: StructuredRecord;
 };
 
 export type SuggestionCategory = "행동" | "건강" | "생활";

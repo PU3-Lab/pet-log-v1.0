@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { usePetLog } from "@/components/pet-log-provider";
 import { Card, Pill, SectionHeader } from "@/components/ui";
+import { getAiCareSuggestions } from "@/lib/ai-insights";
 import { suggestions } from "@/lib/mock-data";
 import type { SuggestionCategory } from "@/lib/types";
 
@@ -18,13 +20,16 @@ const toneClasses = {
 const suggestionFilters: SuggestionFilter[] = ["전체", "행동", "건강", "생활"];
 
 export default function SuggestionsPage() {
+  const { records } = usePetLog();
   const [activeFilter, setActiveFilter] = useState<SuggestionFilter>("전체");
+  const aiSuggestions = useMemo(() => getAiCareSuggestions(records), [records]);
+  const allSuggestions = useMemo(() => [...aiSuggestions, ...suggestions], [aiSuggestions]);
   const filteredSuggestions = useMemo(() => {
     if (activeFilter === "전체") {
-      return suggestions;
+      return allSuggestions;
     }
-    return suggestions.filter((suggestion) => suggestion.category === activeFilter);
-  }, [activeFilter]);
+    return allSuggestions.filter((suggestion) => suggestion.category === activeFilter);
+  }, [activeFilter, allSuggestions]);
 
   return (
     <AppShell subtitle="맞춤형 행동 개선 가이드" title="제안">

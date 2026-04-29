@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { structureRecord } from "@/lib/ai-insights";
 import { petProfile as initialProfile, records as initialRecords } from "@/lib/mock-data";
 import type { PetProfile, RecordCategory, RecordEntry } from "@/lib/types";
 
@@ -162,6 +163,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       title: createTitle(input.detail),
       detail: input.detail.trim(),
       status: "normal",
+      structured: structureRecord(input.detail, input.category),
     };
 
     setRecords((current) => [record, ...current]);
@@ -178,6 +180,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
               category: input.category,
               detail,
               title: createTitle(detail),
+              structured: structureRecord(detail, input.category),
             }
           : record,
       ),
