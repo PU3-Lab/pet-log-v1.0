@@ -20,9 +20,12 @@ const toneClasses: Record<CareNotificationTone, string> = {
 };
 
 export default function NotificationsPage() {
-  const { records, schedules } = usePetLog();
+  const { records, schedules, settings } = usePetLog();
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>("전체");
-  const notifications = useMemo(() => getCareNotifications(records, schedules), [records, schedules]);
+  const notifications = useMemo(
+    () => getCareNotifications(records, schedules, undefined, settings.notificationPreferences),
+    [records, schedules, settings.notificationPreferences],
+  );
   const filteredNotifications = useMemo(() => {
     if (activeFilter === "전체") {
       return notifications;

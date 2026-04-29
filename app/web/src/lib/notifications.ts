@@ -1,5 +1,6 @@
 import { getScheduleStatus, getUpcomingSchedules } from "./schedules";
-import type { CareNotification, CareSchedule, RecordEntry } from "./types";
+import { defaultNotificationPreferences } from "./settings";
+import type { CareNotification, CareSchedule, NotificationPreferences, RecordEntry } from "./types";
 
 const recentRecordLimit = 7;
 
@@ -10,12 +11,17 @@ function formatToday(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
-export function getCareNotifications(records: RecordEntry[], schedules: CareSchedule[] = [], today = formatToday()): CareNotification[] {
+export function getCareNotifications(
+  records: RecordEntry[],
+  schedules: CareSchedule[] = [],
+  today = formatToday(),
+  preferences: NotificationPreferences = defaultNotificationPreferences,
+): CareNotification[] {
   const recentRecords = records.slice(0, recentRecordLimit);
   const notifications: CareNotification[] = [];
 
   const alertRecord = recentRecords.find((record) => record.status === "alert");
-  if (alertRecord) {
+  if (preferences.alert && alertRecord) {
     notifications.push({
       id: "follow-up-alert",
       category: "주의",
@@ -28,7 +34,7 @@ export function getCareNotifications(records: RecordEntry[], schedules: CareSche
     });
   }
 
-  if (!recentRecords.some((record) => record.category === "stool")) {
+  if (preferences.missingRecord && !recentRecords.some((record) => record.category === "stool")) {
     notifications.push({
       id: "missing-stool",
       category: "기록",
@@ -41,7 +47,7 @@ export function getCareNotifications(records: RecordEntry[], schedules: CareSche
     });
   }
 
-  if (!recentRecords.some((record) => record.category === "walk")) {
+  if (preferences.missingRecord && !recentRecords.some((record) => record.category === "walk")) {
     notifications.push({
       id: "missing-walk",
       category: "기록",
@@ -54,31 +60,33 @@ export function getCareNotifications(records: RecordEntry[], schedules: CareSche
     });
   }
 
-  if (schedules.length > 0) {
-    getUpcomingSchedules(schedules, today, 3).forEach((schedule) => {
-      const status = getScheduleStatus(schedule, today);
+  if (preferences.schedule) {
+    if (schedules.length > 0) {
+      getUpcomingSchedules(schedules, today, 3).forEach((schedule) => {
+        const status = getScheduleStatus(schedule, today);
+        notifications.push({
+          id: `schedule-${schedule.id}`,
+          category: "일정",
+          title: `${schedule.title} 일정이 다가옵니다`,
+          detail: schedule.note || `${schedule.repeatLabel} 일정입니다. 필요한 준비를 확인해보세요.`,
+          action: "일정 확인",
+          actionHref: "/schedule",
+          dueLabel: status.label,
+          tone: status.tone,
+        });
+      });
+    } else {
       notifications.push({
-        id: `schedule-${schedule.id}`,
+        id: "vaccine-due",
         category: "일정",
-        title: `${schedule.title} 일정이 다가옵니다`,
-        detail: schedule.note || `${schedule.repeatLabel} 일정입니다. 필요한 준비를 확인해보세요.`,
+        title: "종합백신 접종 시기가 다가옵니다",
+        detail: "예방접종 예정일이 가까워졌습니다. 병원 예약이나 접종 기록을 확인해보세요.",
         action: "일정 확인",
         actionHref: "/schedule",
-        dueLabel: status.label,
-        tone: status.tone,
+        dueLabel: "3일 후",
+        tone: "blue",
       });
-    });
-  } else {
-    notifications.push({
-      id: "vaccine-due",
-      category: "일정",
-      title: "종합백신 접종 시기가 다가옵니다",
-      detail: "예방접종 예정일이 가까워졌습니다. 병원 예약이나 접종 기록을 확인해보세요.",
-      action: "일정 확인",
-      actionHref: "/schedule",
-      dueLabel: "3일 후",
-      tone: "blue",
-    });
+    }
   }
 
   return notifications;

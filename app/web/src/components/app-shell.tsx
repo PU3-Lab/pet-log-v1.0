@@ -25,8 +25,8 @@ type AppShellProps = {
 
 export function AppShell({ title, subtitle, action, bottomAction, children }: AppShellProps) {
   const pathname = usePathname();
-  const { records, schedules } = usePetLog();
-  const notificationCount = getCareNotifications(records, schedules).length;
+  const { records, schedules, settings } = usePetLog();
+  const notificationCount = getCareNotifications(records, schedules, undefined, settings.notificationPreferences).length;
   const showBackButton = pathname !== "/";
 
   return (

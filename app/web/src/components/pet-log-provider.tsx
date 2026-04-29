@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { structureRecord } from "@/lib/ai-insights";
 import { petProfile as initialProfile, records as initialRecords, schedules as initialSchedules } from "@/lib/mock-data";
-import type { CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
+import { defaultAppSettings } from "@/lib/settings";
+import type { AppSettings, CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
 
 type NewRecordInput = {
   category: RecordCategory;
@@ -28,16 +29,19 @@ type StoredPetLogState = {
   profile: PetProfile;
   records: RecordEntry[];
   schedules?: CareSchedule[];
+  settings?: AppSettings;
 };
 
 type PetLogContextValue = {
   profile: PetProfile;
   records: RecordEntry[];
   schedules: CareSchedule[];
+  settings: AppSettings;
   addRecord: (input: NewRecordInput) => RecordEntry;
   updateRecord: (id: string, input: UpdateRecordInput) => void;
   deleteRecord: (id: string) => void;
   updateProfile: (input: PetProfile) => void;
+  updateSettings: (input: AppSettings) => void;
   addSchedule: (input: NewScheduleInput) => CareSchedule;
   toggleScheduleDone: (id: string) => void;
   deleteSchedule: (id: string) => void;
@@ -124,6 +128,21 @@ function isPetProfile(value: unknown): value is PetProfile {
   );
 }
 
+function isAppSettings(value: unknown): value is AppSettings {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const settings = value as AppSettings;
+  return (
+    typeof settings.aiInsightEnabled === "boolean" &&
+    !!settings.notificationPreferences &&
+    typeof settings.notificationPreferences.missingRecord === "boolean" &&
+    typeof settings.notificationPreferences.alert === "boolean" &&
+    typeof settings.notificationPreferences.schedule === "boolean"
+  );
+}
+
 function parseStoredState(value: string | null): StoredPetLogState | null {
   if (!value) {
     return null;
@@ -136,7 +155,8 @@ function parseStoredState(value: string | null): StoredPetLogState | null {
       isPetProfile(parsed.profile) &&
       Array.isArray(parsed.records) &&
       parsed.records.every(isRecordEntry) &&
-      (parsed.schedules === undefined || (Array.isArray(parsed.schedules) && parsed.schedules.every(isCareSchedule)))
+      (parsed.schedules === undefined || (Array.isArray(parsed.schedules) && parsed.schedules.every(isCareSchedule))) &&
+      (parsed.settings === undefined || isAppSettings(parsed.settings))
     ) {
       return parsed as StoredPetLogState;
     }
@@ -151,6 +171,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<PetProfile>(initialProfile);
   const [records, setRecords] = useState<RecordEntry[]>(initialRecords);
   const [schedules, setSchedules] = useState<CareSchedule[]>(initialSchedules);
+  const [settings, setSettings] = useState<AppSettings>(defaultAppSettings);
   const [isStorageReady, setIsStorageReady] = useState(false);
 
   useEffect(() => {
@@ -166,6 +187,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
         setProfile(storedState.profile);
         setRecords(storedState.records);
         setSchedules(storedState.schedules ?? initialSchedules);
+        setSettings(storedState.settings ?? defaultAppSettings);
       }
       setIsStorageReady(true);
     }, 0);
@@ -183,6 +205,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       profile,
       records,
       schedules,
+      settings,
     };
 
     try {
@@ -190,7 +213,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     } catch {
       // 저장소 사용이 막힌 환경에서는 현재 세션 상태만 유지합니다.
     }
-  }, [isStorageReady, profile, records, schedules]);
+  }, [isStorageReady, profile, records, schedules, settings]);
 
   const addRecord = useCallback((input: NewRecordInput) => {
     const now = new Date();
@@ -238,6 +261,17 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updateSettings = useCallback((input: AppSettings) => {
+    setSettings({
+      notificationPreferences: {
+        missingRecord: input.notificationPreferences.missingRecord,
+        alert: input.notificationPreferences.alert,
+        schedule: input.notificationPreferences.schedule,
+      },
+      aiInsightEnabled: input.aiInsightEnabled,
+    });
+  }, []);
+
   const addSchedule = useCallback((input: NewScheduleInput) => {
     const now = new Date();
     const schedule: CareSchedule = {
@@ -269,10 +303,12 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       profile,
       records,
       schedules,
+      settings,
       addRecord,
       updateRecord,
       deleteRecord,
       updateProfile,
+      updateSettings,
       addSchedule,
       toggleScheduleDone,
       deleteSchedule,
@@ -281,10 +317,12 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       profile,
       records,
       schedules,
+      settings,
       addRecord,
       updateRecord,
       deleteRecord,
       updateProfile,
+      updateSettings,
       addSchedule,
       toggleScheduleDone,
       deleteSchedule,

@@ -35,12 +35,15 @@ const toneCard: Record<AnalysisTone, string> = {
 };
 
 export default function AnalysisPage() {
-  const { records } = usePetLog();
+  const { records, settings } = usePetLog();
   const [activeRange, setActiveRange] = useState<AnalysisRange>("weekly");
   const [activeMetric, setActiveMetric] = useState<AnalysisMetricFilter>("all");
 
   const summary = useMemo(() => getAnalysisReport(records, activeRange), [activeRange, records]);
-  const aiInsights = useMemo(() => getAiInsights(records), [records]);
+  const aiInsights = useMemo(
+    () => (settings.aiInsightEnabled ? getAiInsights(records) : []),
+    [records, settings.aiInsightEnabled],
+  );
   const metrics = useMemo(() => getAnalysisMetrics(records), [records]);
   const vetBrief = useMemo(() => getVetBrief(records), [records]);
   const trendChart = useMemo(() => getAnalysisTrendChart(metrics, activeMetric), [activeMetric, metrics]);
@@ -108,19 +111,26 @@ export default function AnalysisPage() {
         <section>
           <SectionHeader title="AI 분석 결과" />
           <div className="space-y-3">
-            {aiInsights.map((insight) => (
-              <Card key={insight.id}>
-                <p
-                  className={`text-sm font-bold ${
-                    insight.tone === "red" ? "text-[#be4c3c]" : insight.tone === "orange" ? "text-[#bb721e]" : "text-[#16804b]"
-                  }`}
-                >
-                  {insight.tone === "red" ? "주의" : insight.tone === "orange" ? "확인 필요" : "안정"}
-                </p>
-                <h2 className="mt-2 text-base font-black text-[#1f2922]">{insight.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-[#667262]">{insight.detail}</p>
+            {settings.aiInsightEnabled ? (
+              aiInsights.map((insight) => (
+                <Card key={insight.id}>
+                  <p
+                    className={`text-sm font-bold ${
+                      insight.tone === "red" ? "text-[#be4c3c]" : insight.tone === "orange" ? "text-[#bb721e]" : "text-[#16804b]"
+                    }`}
+                  >
+                    {insight.tone === "red" ? "주의" : insight.tone === "orange" ? "확인 필요" : "안정"}
+                  </p>
+                  <h2 className="mt-2 text-base font-black text-[#1f2922]">{insight.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#667262]">{insight.detail}</p>
+                </Card>
+              ))
+            ) : (
+              <Card className="p-5 text-center">
+                <h2 className="text-sm font-bold text-[#1f2922]">AI 분석이 꺼져 있습니다.</h2>
+                <p className="mt-2 text-sm leading-6 text-[#667262]">설정에서 AI 요약과 케어 제안을 다시 켤 수 있습니다.</p>
               </Card>
-            ))}
+            )}
           </div>
         </section>
 

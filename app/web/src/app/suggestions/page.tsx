@@ -20,10 +20,16 @@ const toneClasses = {
 const suggestionFilters: SuggestionFilter[] = ["전체", "행동", "건강", "생활"];
 
 export default function SuggestionsPage() {
-  const { records } = usePetLog();
+  const { records, settings } = usePetLog();
   const [activeFilter, setActiveFilter] = useState<SuggestionFilter>("전체");
-  const aiSuggestions = useMemo(() => getAiCareSuggestions(records), [records]);
-  const allSuggestions = useMemo(() => [...aiSuggestions, ...suggestions], [aiSuggestions]);
+  const aiSuggestions = useMemo(
+    () => (settings.aiInsightEnabled ? getAiCareSuggestions(records) : []),
+    [records, settings.aiInsightEnabled],
+  );
+  const allSuggestions = useMemo(
+    () => (settings.aiInsightEnabled ? [...aiSuggestions, ...suggestions] : []),
+    [aiSuggestions, settings.aiInsightEnabled],
+  );
   const filteredSuggestions = useMemo(() => {
     if (activeFilter === "전체") {
       return allSuggestions;
@@ -45,6 +51,18 @@ export default function SuggestionsPage() {
         <section>
           <SectionHeader title="오늘의 제안" />
           <div className="space-y-3">
+            {!settings.aiInsightEnabled ? (
+              <Card className="p-5 text-center">
+                <h2 className="text-sm font-bold text-[#1f2922]">AI 제안이 꺼져 있습니다.</h2>
+                <p className="mt-2 text-sm leading-6 text-[#667262]">설정에서 AI 요약과 케어 제안을 다시 켤 수 있습니다.</p>
+                <Link
+                  className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-[#16804b] px-5 text-sm font-bold text-white"
+                  href="/settings"
+                >
+                  설정 열기
+                </Link>
+              </Card>
+            ) : null}
             {filteredSuggestions.map((suggestion) => (
               <Card key={suggestion.id}>
                 <div className="flex gap-3">
@@ -64,7 +82,7 @@ export default function SuggestionsPage() {
                 </div>
               </Card>
             ))}
-            {filteredSuggestions.length === 0 ? (
+            {settings.aiInsightEnabled && filteredSuggestions.length === 0 ? (
               <Card className="p-5 text-center">
                 <h2 className="text-sm font-bold text-[#1f2922]">표시할 제안이 없습니다.</h2>
                 <p className="mt-2 text-sm leading-6 text-[#667262]">다른 카테고리를 선택해보세요.</p>

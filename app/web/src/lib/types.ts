@@ -77,6 +77,17 @@ export type CareNotificationTone = "green" | "orange" | "red" | "blue";
 
 export type CareNotificationCategory = "기록" | "주의" | "일정";
 
+export type NotificationPreferences = {
+  missingRecord: boolean;
+  alert: boolean;
+  schedule: boolean;
+};
+
+export type AppSettings = {
+  notificationPreferences: NotificationPreferences;
+  aiInsightEnabled: boolean;
+};
+
 export type CareNotification = {
   id: string;
   category: CareNotificationCategory;

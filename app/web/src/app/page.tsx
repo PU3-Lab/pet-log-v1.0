@@ -33,13 +33,13 @@ const toneCard: Record<HomeSummaryTone, string> = {
 };
 
 export default function Home() {
-  const { profile, records } = usePetLog();
+  const { profile, records, schedules, settings } = usePetLog();
   const latestRecords = records.slice(0, 3);
-  const notifications = getCareNotifications(records).slice(0, 2);
+  const notifications = getCareNotifications(records, schedules, undefined, settings.notificationPreferences).slice(0, 2);
   const todaySummary = getTodaySummary(records);
   const recentChange = getRecentChange(records);
-  const aiSuggestions = getAiCareSuggestions(records);
-  const homeSuggestions = [...aiSuggestions, ...suggestions].slice(0, 2);
+  const aiSuggestions = settings.aiInsightEnabled ? getAiCareSuggestions(records) : [];
+  const homeSuggestions = settings.aiInsightEnabled ? [...aiSuggestions, ...suggestions].slice(0, 2) : [];
 
   return (
     <AppShell
@@ -87,22 +87,24 @@ export default function Home() {
           </div>
         </section>
 
-        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
-          <div className="flex gap-3">
-            <AiMascot />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-[#16804b]">AI 질문</p>
-              <h2 className="mt-1 text-lg font-bold leading-7 text-[#1f2922]">오늘 배변 상태는 어땠나요?</h2>
-              <p className="mt-2 text-sm leading-6 text-[#62705f]">어제 기록이 비어 있어 변화 판단에 필요합니다.</p>
-              <Link
-                className="mt-4 inline-flex h-10 items-center rounded-xl bg-[#16804b] px-5 text-sm font-bold text-white"
-                href="/record"
-              >
-                기록하기
-              </Link>
+        {settings.aiInsightEnabled ? (
+          <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
+            <div className="flex gap-3">
+              <AiMascot />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[#16804b]">AI 질문</p>
+                <h2 className="mt-1 text-lg font-bold leading-7 text-[#1f2922]">오늘 배변 상태는 어땠나요?</h2>
+                <p className="mt-2 text-sm leading-6 text-[#62705f]">어제 기록이 비어 있어 변화 판단에 필요합니다.</p>
+                <Link
+                  className="mt-4 inline-flex h-10 items-center rounded-xl bg-[#16804b] px-5 text-sm font-bold text-white"
+                  href="/record"
+                >
+                  기록하기
+                </Link>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        ) : null}
 
         <section>
           <SectionHeader
@@ -158,30 +160,32 @@ export default function Home() {
           </Card>
         </section>
 
-        <section>
-          <SectionHeader
-            action={
-              <Link className="text-xs font-bold text-[#16804b]" href="/suggestions">
-                더보기
-              </Link>
-            }
-            title="AI 제안"
-          />
-          <div className="space-y-3">
-            {homeSuggestions.map((suggestion) => (
-              <Card className="p-4" key={suggestion.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold text-[#16804b]">{suggestion.category}</p>
-                    <h3 className="mt-1 font-bold text-[#1f2922]">{suggestion.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#62705f]">{suggestion.detail}</p>
+        {settings.aiInsightEnabled ? (
+          <section>
+            <SectionHeader
+              action={
+                <Link className="text-xs font-bold text-[#16804b]" href="/suggestions">
+                  더보기
+                </Link>
+              }
+              title="AI 제안"
+            />
+            <div className="space-y-3">
+              {homeSuggestions.map((suggestion) => (
+                <Card className="p-4" key={suggestion.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-[#16804b]">{suggestion.category}</p>
+                      <h3 className="mt-1 font-bold text-[#1f2922]">{suggestion.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[#62705f]">{suggestion.detail}</p>
+                    </div>
+                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#16804b]" />
                   </div>
-                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#16804b]" />
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
+                </Card>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section>
           <SectionHeader title="오늘 할 일" />

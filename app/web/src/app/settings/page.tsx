@@ -1,0 +1,147 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo } from "react";
+import { AppShell } from "@/components/app-shell";
+import { usePetLog } from "@/components/pet-log-provider";
+import { Card, SectionHeader } from "@/components/ui";
+import { getSettingsSummary, notificationPreferenceOptions } from "@/lib/settings";
+import type { NotificationPreferences } from "@/lib/types";
+
+const categoryClasses = {
+  기록: "bg-[#edf8ed] text-[#16804b]",
+  주의: "bg-[#ffe9e6] text-[#be4c3c]",
+  일정: "bg-[#eaf2ff] text-[#2e67a7]",
+};
+
+const settingPanelClass =
+  "rounded-2xl border border-[#e0e6da] bg-white p-4 shadow-[0_8px_24px_rgba(49,65,44,0.06)]";
+
+function ToggleMark({ active }: { active: boolean }) {
+  return (
+    <span
+      className={`relative h-7 w-12 shrink-0 rounded-full transition ${active ? "bg-[#16804b]" : "bg-[#cfd8ca]"}`}
+    >
+      <span
+        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
+          active ? "left-6" : "left-1"
+        }`}
+      />
+    </span>
+  );
+}
+
+export default function SettingsPage() {
+  const { profile, records, schedules, settings, updateSettings } = usePetLog();
+  const summary = useMemo(() => getSettingsSummary(settings), [settings]);
+  const activeSchedules = useMemo(() => schedules.filter((schedule) => !schedule.isDone).length, [schedules]);
+
+  function toggleNotificationPreference(key: keyof NotificationPreferences) {
+    updateSettings({
+      ...settings,
+      notificationPreferences: {
+        ...settings.notificationPreferences,
+        [key]: !settings.notificationPreferences[key],
+      },
+    });
+  }
+
+  function toggleAiInsight() {
+    updateSettings({
+      ...settings,
+      aiInsightEnabled: !settings.aiInsightEnabled,
+    });
+  }
+
+  return (
+    <AppShell subtitle="알림과 AI 요약 관리" title="설정">
+      <div className="space-y-5">
+        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
+          <p className="text-sm font-bold text-[#16804b]">현재 설정</p>
+          <h2 className="mt-1 text-2xl font-black text-[#1f2922]">알림 {summary.enabledNotificationCount}개 켜짐</h2>
+          <p className="mt-2 text-sm leading-6 text-[#667262]">{summary.aiInsightLabel} 상태입니다.</p>
+        </Card>
+
+        <section>
+          <SectionHeader title="알림" />
+          <div className="space-y-3">
+            {notificationPreferenceOptions.map((option) => {
+              const active = settings.notificationPreferences[option.key];
+              return (
+                <button
+                  aria-pressed={active}
+                  className={`${settingPanelClass} w-full text-left`}
+                  key={option.key}
+                  onClick={() => toggleNotificationPreference(option.key)}
+                  type="button"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${categoryClasses[option.category]}`}>
+                        {option.category}
+                      </span>
+                      <h2 className="mt-3 text-sm font-black text-[#1f2922]">{option.label}</h2>
+                      <p className="mt-1 text-xs font-semibold leading-5 text-[#667262]">{option.detail}</p>
+                    </div>
+                    <ToggleMark active={active} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeader title="AI" />
+          <button
+            aria-pressed={settings.aiInsightEnabled}
+            className={`${settingPanelClass} w-full text-left`}
+            onClick={toggleAiInsight}
+            type="button"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-[#1f2922]">AI 요약과 케어 제안</p>
+                <p className="mt-1 text-sm leading-6 text-[#667262]">홈, 분석, 제안 화면의 해석형 문구를 표시합니다.</p>
+              </div>
+              <ToggleMark active={settings.aiInsightEnabled} />
+            </div>
+          </button>
+        </section>
+
+        <section>
+          <SectionHeader title="데이터" />
+          <Card>
+            <dl className="space-y-3 text-sm">
+              {[
+                ["프로필", profile.name],
+                ["저장된 기록", `${records.length}개`],
+                ["진행 중 일정", `${activeSchedules}개`],
+              ].map(([label, value]) => (
+                <div className="flex justify-between gap-4 border-b border-[#edf1e9] pb-3 last:border-0 last:pb-0" key={label}>
+                  <dt className="font-bold text-[#778174]">{label}</dt>
+                  <dd className="text-right font-semibold text-[#263022]">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { href: "/profile", label: "프로필" },
+                { href: "/timeline", label: "기록" },
+                { href: "/schedule", label: "일정" },
+              ].map((item) => (
+                <Link
+                  className="grid h-10 place-items-center rounded-xl border border-[#dce7d7] bg-[#f7fbf4] text-sm font-bold text-[#16804b]"
+                  href={item.href}
+                  key={item.href}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </section>
+      </div>
+    </AppShell>
+  );
+}
