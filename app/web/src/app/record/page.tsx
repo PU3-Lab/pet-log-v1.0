@@ -81,7 +81,21 @@ export default function RecordPage() {
   }
 
   return (
-    <AppShell subtitle="자연어로 쉽고 빠르게 기록" title="기록 입력">
+    <AppShell
+      bottomAction={
+        <button
+          className={`h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] ${
+            isInvalid ? "bg-[#8ab99f]" : "bg-[#16804b]"
+          }`}
+          onClick={handleSave}
+          type="button"
+        >
+          기록 저장하기
+        </button>
+      }
+      subtitle="자연어로 쉽고 빠르게 기록"
+      title="기록 입력"
+    >
       <div className="space-y-5">
         <Card>
           <div className="mb-3 flex items-center justify-between">
@@ -215,17 +229,6 @@ export default function RecordPage() {
           </div>
         </section>
 
-        <div className="sticky bottom-0 z-20 -mx-5 border-t border-[#e0e6da] bg-[#f8faf5]/95 px-5 pb-3 pt-3 shadow-[0_-12px_28px_rgba(46,63,42,0.08)] backdrop-blur">
-          <button
-            className={`h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] ${
-              isInvalid ? "bg-[#8ab99f]" : "bg-[#16804b]"
-            }`}
-            onClick={handleSave}
-            type="button"
-          >
-            기록 저장하기
-          </button>
-        </div>
       </div>
     </AppShell>
   );

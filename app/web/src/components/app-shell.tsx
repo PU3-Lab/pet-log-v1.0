@@ -19,10 +19,11 @@ type AppShellProps = {
   title: string;
   subtitle?: string;
   action?: ReactNode;
+  bottomAction?: ReactNode;
   children: ReactNode;
 };
 
-export function AppShell({ title, subtitle, action, children }: AppShellProps) {
+export function AppShell({ title, subtitle, action, bottomAction, children }: AppShellProps) {
   const pathname = usePathname();
   const { records } = usePetLog();
   const notificationCount = getCareNotifications(records).length;
@@ -66,7 +67,13 @@ export function AppShell({ title, subtitle, action, children }: AppShellProps) {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-28 pt-5">{children}</div>
+        <div className={`min-h-0 flex-1 overflow-y-auto px-5 pt-5 ${bottomAction ? "pb-5" : "pb-28"}`}>{children}</div>
+
+        {bottomAction ? (
+          <div className="z-20 shrink-0 bg-transparent px-5 pb-3 pt-3">
+            {bottomAction}
+          </div>
+        ) : null}
 
         <nav className="z-30 shrink-0 border-t border-[#dfe6d9] bg-white/95 px-3 pb-3 pt-2 shadow-[0_-12px_30px_rgba(46,63,42,0.08)] backdrop-blur">
           <div className="grid grid-cols-5 gap-1">
