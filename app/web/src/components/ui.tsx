@@ -36,7 +36,7 @@ export function Pill({
   className?: string;
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>["onClick"];
 }) {
-  const pillClassName = `inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-semibold transition ${
+  const pillClassName = `inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-semibold transition ${
     active ? "bg-[#16804b] text-white" : "bg-[#f0f3ed] text-[#616b5d]"
   } ${onClick ? "focus:outline-none focus:ring-2 focus:ring-[#16804b]/20" : ""} ${className}`;
 
