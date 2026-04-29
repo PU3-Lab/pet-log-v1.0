@@ -84,6 +84,7 @@ function isPetProfile(value: unknown): value is PetProfile {
     typeof profile.weight === "string" &&
     typeof profile.birthday === "string" &&
     typeof profile.personality === "string" &&
+    (profile.photoDataUrl === undefined || typeof profile.photoDataUrl === "string") &&
     Array.isArray(profile.notes) &&
     profile.notes.every((note) => typeof note === "string")
   );
@@ -195,6 +196,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     setProfile({
       ...input,
       notes: input.notes.map((note) => note.trim()).filter(Boolean),
+      photoDataUrl: input.photoDataUrl || undefined,
     });
   }, []);
 

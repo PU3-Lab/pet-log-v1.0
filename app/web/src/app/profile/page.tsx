@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useRef, useState, type ChangeEvent } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, MiniLineChart, Pill, SectionHeader } from "@/components/ui";
 import { metrics } from "@/lib/mock-data";
+import { getProfilePhotoError } from "@/lib/profile-photo";
 import type { PetProfile } from "@/lib/types";
 
 const emptyProfile: PetProfile = {
@@ -21,6 +23,8 @@ const emptyProfile: PetProfile = {
 export default function ProfilePage() {
   const { profile, updateProfile } = usePetLog();
   const weightMetric = metrics.find((metric) => metric.label === "체중") ?? metrics[0];
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<PetProfile>(profile);
   const [notesText, setNotesText] = useState(profile.notes.join("\n"));
@@ -45,6 +49,34 @@ export default function ProfilePage() {
     setNotesText(profile.notes.join("\n"));
     setError("");
     setIsEditing(false);
+  }
+
+  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const photoError = getProfilePhotoError(file);
+    if (photoError) {
+      setError(photoError);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        setError("프로필 사진을 읽지 못했습니다.");
+        return;
+      }
+
+      setDraft((current) => ({ ...current, photoDataUrl: reader.result as string }));
+      setError("");
+    };
+    reader.onerror = () => setError("프로필 사진을 읽지 못했습니다.");
+    reader.readAsDataURL(file);
   }
 
   function saveProfile() {
@@ -82,7 +114,18 @@ export default function ProfilePage() {
         <Card>
           <div className="flex gap-4">
             <div className="grid h-20 w-20 shrink-0 place-items-center rounded-3xl bg-[#eef5e9] text-2xl font-black text-[#16804b]">
-              {profile.name.slice(0, 1)}
+              {profile.photoDataUrl ? (
+                <Image
+                  alt={`${profile.name} 프로필 사진`}
+                  className="h-full w-full rounded-3xl object-cover"
+                  height={80}
+                  src={profile.photoDataUrl}
+                  unoptimized
+                  width={80}
+                />
+              ) : (
+                profile.name.slice(0, 1)
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
@@ -161,6 +204,68 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="space-y-3">
+              <div className="rounded-2xl border border-[#dfe8d9] bg-white p-3">
+                <span className="text-xs font-bold text-[#778174]">프로필 사진</span>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-3xl bg-[#eef5e9] text-2xl font-black text-[#16804b]">
+                    {draft.photoDataUrl ? (
+                      <Image
+                        alt="프로필 사진 미리보기"
+                        className="h-full w-full object-cover"
+                        height={80}
+                        src={draft.photoDataUrl}
+                        unoptimized
+                        width={80}
+                      />
+                    ) : (
+                      draft.name.slice(0, 1) || profile.name.slice(0, 1)
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold leading-5 text-[#667262]">2MB 이하의 이미지 파일을 저장할 수 있습니다.</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <button
+                        className="h-10 rounded-xl border border-[#cfe2cd] bg-[#f4faf2] text-sm font-bold text-[#16804b]"
+                        onClick={() => uploadInputRef.current?.click()}
+                        type="button"
+                      >
+                        업로드
+                      </button>
+                      <button
+                        className="h-10 rounded-xl border border-[#d8e1f2] bg-[#f6f9ff] text-sm font-bold text-[#356aa8]"
+                        onClick={() => cameraInputRef.current?.click()}
+                        type="button"
+                      >
+                        촬영
+                      </button>
+                    </div>
+                    {draft.photoDataUrl ? (
+                      <button
+                        className="mt-2 h-9 w-full rounded-xl bg-[#fff0ed] text-sm font-bold text-[#be4c3c]"
+                        onClick={() => setDraft((current) => ({ ...current, photoDataUrl: undefined }))}
+                        type="button"
+                      >
+                        사진 삭제
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <input
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                  ref={uploadInputRef}
+                  type="file"
+                />
+                <input
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                  ref={cameraInputRef}
+                  type="file"
+                />
+              </div>
               {[
                 ["이름", "name"],
                 ["품종", "breed"],

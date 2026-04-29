@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
@@ -57,7 +58,18 @@ export default function Home() {
       <div className="space-y-5">
         <section className="grid grid-cols-[52px_1fr] items-center gap-3 rounded-2xl border border-[#dfe6d9] bg-white p-4 shadow-[0_8px_24px_rgba(49,65,44,0.05)]">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eaf5e5] text-xl font-black text-[#16804b]">
-            {profile.name.slice(0, 1)}
+            {profile.photoDataUrl ? (
+              <Image
+                alt={`${profile.name} 프로필 사진`}
+                className="h-full w-full rounded-2xl object-cover"
+                height={48}
+                src={profile.photoDataUrl}
+                unoptimized
+                width={48}
+              />
+            ) : (
+              profile.name.slice(0, 1)
+            )}
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">

@@ -25,6 +25,7 @@ export type PetProfile = {
   birthday: string;
   personality: string;
   notes: string[];
+  photoDataUrl?: string;
 };
 
 export type RecordEntry = {
