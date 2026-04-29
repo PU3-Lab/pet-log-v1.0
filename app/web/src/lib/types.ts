@@ -52,6 +52,21 @@ export type Suggestion = {
   tone: SuggestionTone;
 };
 
+export type CareNotificationTone = "green" | "orange" | "red" | "blue";
+
+export type CareNotificationCategory = "기록" | "주의" | "일정";
+
+export type CareNotification = {
+  id: string;
+  category: CareNotificationCategory;
+  title: string;
+  detail: string;
+  action: string;
+  actionHref: string;
+  dueLabel: string;
+  tone: CareNotificationTone;
+};
+
 export type MetricSeries = {
   id: "meal" | "activity" | "weight";
   label: string;
