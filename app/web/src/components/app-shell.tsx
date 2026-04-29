@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { usePetLog } from "./pet-log-provider";
 import { PetIcon } from "./pet-icons";
+import { getCareNotifications } from "@/lib/notifications";
 
 const navItems = [
   { href: "/", label: "홈", icon: "home" },
@@ -22,6 +24,8 @@ type AppShellProps = {
 
 export function AppShell({ title, subtitle, action, children }: AppShellProps) {
   const pathname = usePathname();
+  const { records } = usePetLog();
+  const notificationCount = getCareNotifications(records).length;
   const showBackButton = pathname !== "/";
 
   return (
@@ -46,12 +50,18 @@ export function AppShell({ title, subtitle, action, children }: AppShellProps) {
               </div>
             </div>
             {action ?? (
-              <button
+              <Link
                 aria-label="알림"
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#dbe4d4] bg-white text-[#167947] shadow-sm"
+                className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#dbe4d4] bg-white text-[#167947] shadow-sm"
+                href="/notifications"
               >
                 <PetIcon className="h-5 w-5" name="bell" />
-              </button>
+                {notificationCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#be4c3c] px-1 text-[10px] font-black leading-none text-white">
+                    {notificationCount > 9 ? "9+" : notificationCount}
+                  </span>
+                ) : null}
+              </Link>
             )}
           </div>
         </header>

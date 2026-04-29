@@ -4,12 +4,14 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { AiMascot, Card, CategoryBadge, SectionHeader } from "@/components/ui";
+import { getCareNotifications } from "@/lib/notifications";
 import { suggestions, todos } from "@/lib/mock-data";
 import { PetIcon } from "@/components/pet-icons";
 
 export default function Home() {
   const { profile, records } = usePetLog();
   const latestRecords = records.slice(0, 3);
+  const notifications = getCareNotifications(records).slice(0, 2);
 
   return (
     <AppShell
@@ -42,6 +44,31 @@ export default function Home() {
             </div>
           </div>
         </Card>
+
+        <section>
+          <SectionHeader
+            action={
+              <Link className="text-xs font-bold text-[#16804b]" href="/notifications">
+                전체 보기
+              </Link>
+            }
+            title="오늘 알림"
+          />
+          <div className="space-y-3">
+            {notifications.map((notification) => (
+              <Card className="p-4" key={notification.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#16804b]">{notification.category} · {notification.dueLabel}</p>
+                    <h3 className="mt-1 text-sm font-bold text-[#1f2922]">{notification.title}</h3>
+                    <p className="mt-1 text-xs leading-5 text-[#667262]">{notification.detail}</p>
+                  </div>
+                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#be4c3c]" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
 
         <section>
           <SectionHeader title="오늘 요약" />
