@@ -25,3 +25,7 @@ Keep this file short and repo-wide. Put workflow details in repo-local skills an
 
 ## md 파일 작성 규칙
 - 한글로 작성할것
+
+## Git 규칙
+- 커밋 메시지 작성
+- 승인후 커밋
