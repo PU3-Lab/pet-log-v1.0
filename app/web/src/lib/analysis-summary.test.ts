@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import { getAnalysisMetrics, getAnalysisReport, getVetBrief } from "./analysis-summary";
+import { getAnalysisMetrics, getAnalysisReport, getCombinedAnalysisMetric, getVetBrief } from "./analysis-summary";
 import type { RecordEntry } from "./types";
 
 const records: RecordEntry[] = [
@@ -43,6 +43,12 @@ assert.ok(emptyReport.insight.includes("기록"));
 const metrics = getAnalysisMetrics(records);
 assert.equal(metrics.find((metric) => metric.id === "behavior")?.values.at(-1), 1);
 assert.equal(metrics.find((metric) => metric.id === "stool")?.trend, "최근 기록 없음");
+
+const combinedMetric = getCombinedAnalysisMetric(records);
+assert.equal(combinedMetric.id, "all");
+assert.equal(combinedMetric.label, "전체");
+assert.deepEqual(combinedMetric.values.slice(-3), [1, 1, 1]);
+assert.ok(combinedMetric.trend.includes("3건"));
 
 const vetBrief = getVetBrief(records);
 assert.equal(vetBrief.items.length, 3);
