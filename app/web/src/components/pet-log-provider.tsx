@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { records as initialRecords, type RecordCategory, type RecordEntry } from "@/lib/mock-data";
+import { records as initialRecords } from "@/lib/mock-data";
+import type { RecordCategory, RecordEntry } from "@/lib/types";
 
 type NewRecordInput = {
   category: RecordCategory;

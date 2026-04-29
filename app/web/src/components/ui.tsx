@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import type { RecordCategory } from "@/lib/mock-data";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { categoryLabels } from "@/lib/mock-data";
+import type { RecordCategory } from "@/lib/types";
 
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
@@ -25,13 +25,31 @@ export function Card({
   );
 }
 
-export function Pill({ children, active = false }: { children: ReactNode; active?: boolean }) {
+export function Pill({
+  children,
+  active = false,
+  className = "",
+  onClick,
+}: {
+  children: ReactNode;
+  active?: boolean;
+  className?: string;
+  onClick?: ButtonHTMLAttributes<HTMLButtonElement>["onClick"];
+}) {
+  const pillClassName = `inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-semibold transition ${
+    active ? "bg-[#16804b] text-white" : "bg-[#f0f3ed] text-[#616b5d]"
+  } ${onClick ? "focus:outline-none focus:ring-2 focus:ring-[#16804b]/20" : ""} ${className}`;
+
+  if (onClick) {
+    return (
+      <button aria-pressed={active} className={pillClassName} onClick={onClick} type="button">
+        {children}
+      </button>
+    );
+  }
+
   return (
-    <span
-      className={`inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold ${
-        active ? "bg-[#16804b] text-white" : "bg-[#f0f3ed] text-[#616b5d]"
-      }`}
-    >
+    <span className={pillClassName}>
       {children}
     </span>
   );

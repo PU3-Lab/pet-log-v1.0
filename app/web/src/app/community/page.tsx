@@ -1,53 +1,84 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Card, Pill, SectionHeader } from "@/components/ui";
+import { communityBoards, communityPosts } from "@/lib/mock-data";
+import type { CommunityBoard, CommunityFeed } from "@/lib/types";
 
-const posts = [
-  {
-    board: "행동 고민",
-    title: "말티즈 산책 줄면 쉽게 흥분하나요?",
-    meta: "댓글 8 · 공감 26",
-  },
-  {
-    board: "용품 나눔",
-    title: "소형견 하네스 나눔합니다",
-    meta: "댓글 3 · 공감 15",
-  },
-  {
-    board: "자유게시판",
-    title: "분리불안 어떻게 기록하고 계세요?",
-    meta: "댓글 12 · 공감 32",
-  },
-];
+const feedFilters: CommunityFeed[] = ["인기글", "최신글", "내 주변"];
 
 export default function CommunityPage() {
+  const [activeBoard, setActiveBoard] = useState<CommunityBoard | null>(null);
+  const [activeFeed, setActiveFeed] = useState<CommunityFeed>("인기글");
+
+  const posts = useMemo(() => {
+    return communityPosts.filter((post) => {
+      const matchesFeed = post.feeds.includes(activeFeed);
+      const matchesBoard = activeBoard ? post.board === activeBoard : true;
+      return matchesFeed && matchesBoard;
+    });
+  }, [activeBoard, activeFeed]);
+
   return (
     <AppShell subtitle="커뮤니티" title="커뮤니티">
       <div className="space-y-5">
         <div className="grid grid-cols-5 gap-2">
-          {["유기동물", "용품 나눔", "자유게시판", "행동 고민", "후기"].map((item) => (
-            <div className="rounded-2xl bg-white p-2 text-center shadow-[0_8px_22px_rgba(49,65,44,0.06)]" key={item}>
-              <div className="mx-auto mb-2 h-10 w-10 rounded-full bg-[#eef5e9]" />
-              <p className="break-keep text-[11px] font-bold text-[#4a5547]">{item}</p>
-            </div>
-          ))}
+          {communityBoards.map((item) => {
+            const active = activeBoard === item;
+            return (
+              <button
+                aria-pressed={active}
+                className={`rounded-2xl p-2 text-center shadow-[0_8px_22px_rgba(49,65,44,0.06)] transition ${
+                  active ? "bg-[#16804b] text-white" : "bg-white text-[#4a5547]"
+                }`}
+                key={item}
+                onClick={() => setActiveBoard(active ? null : item)}
+                type="button"
+              >
+                <div className={`mx-auto mb-2 h-10 w-10 rounded-full ${active ? "bg-white/25" : "bg-[#eef5e9]"}`} />
+                <p className={`break-keep text-[11px] font-bold ${active ? "text-white" : "text-[#4a5547]"}`}>{item}</p>
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex gap-2">
-          <Pill active>인기글</Pill>
-          <Pill>최신글</Pill>
-          <Pill>내 주변</Pill>
+          {feedFilters.map((filter) => (
+            <Pill active={activeFeed === filter} key={filter} onClick={() => setActiveFeed(filter)}>
+              {filter}
+            </Pill>
+          ))}
         </div>
 
         <section>
-          <SectionHeader title="인기글" />
+          <SectionHeader
+            action={
+              activeBoard ? (
+                <button className="text-xs font-bold text-[#16804b]" onClick={() => setActiveBoard(null)} type="button">
+                  전체 보기
+                </button>
+              ) : null
+            }
+            title={activeBoard ? `${activeBoard} ${activeFeed}` : activeFeed}
+          />
           <div className="space-y-3">
             {posts.map((post) => (
               <Card className="p-4" key={post.title}>
                 <p className="text-xs font-bold text-[#16804b]">{post.board}</p>
                 <h2 className="mt-2 text-sm font-black text-[#1f2922]">{post.title}</h2>
-                <p className="mt-2 text-xs font-semibold text-[#7c8777]">{post.meta}</p>
+                <p className="mt-2 text-xs font-semibold text-[#7c8777]">
+                  댓글 {post.comments} · 공감 {post.likes}
+                  {post.distance ? ` · ${post.distance}` : ""}
+                </p>
               </Card>
             ))}
+            {posts.length === 0 ? (
+              <Card className="p-5 text-center">
+                <h2 className="text-sm font-bold text-[#1f2922]">표시할 글이 없습니다.</h2>
+                <p className="mt-2 text-sm leading-6 text-[#667262]">게시판이나 글 필터를 바꿔보세요.</p>
+              </Card>
+            ) : null}
           </div>
         </section>
 

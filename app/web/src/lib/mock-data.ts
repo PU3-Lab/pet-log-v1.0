@@ -1,41 +1,4 @@
-export type RecordCategory = "meal" | "walk" | "stool" | "medical" | "behavior";
-
-export type PetProfile = {
-  name: string;
-  breed: string;
-  age: string;
-  sex: string;
-  weight: string;
-  birthday: string;
-  personality: string;
-  notes: string[];
-};
-
-export type RecordEntry = {
-  id: string;
-  time: string;
-  date: string;
-  category: RecordCategory;
-  title: string;
-  detail: string;
-  status: "normal" | "notice" | "alert";
-};
-
-export type Suggestion = {
-  id: string;
-  category: "행동" | "건강" | "생활";
-  title: string;
-  detail: string;
-  action: string;
-  tone: "green" | "orange" | "blue";
-};
-
-export type MetricSeries = {
-  label: string;
-  unit: string;
-  values: number[];
-  trend: string;
-};
+import type { CommunityBoard, CommunityPost, MetricSeries, PetProfile, RecordCategory, RecordEntry, Suggestion } from "./types";
 
 export const petProfile: PetProfile = {
   name: "코코",
@@ -103,6 +66,7 @@ export const suggestions: Suggestion[] = [
     title: "산책 시간이 줄었어요",
     detail: "최근 일주일간 산책 시간이 평균보다 18분 짧습니다. 짧은 산책을 2회로 나누어보세요.",
     action: "자세히 보기",
+    actionHref: "/analysis",
     tone: "green",
   },
   {
@@ -111,6 +75,7 @@ export const suggestions: Suggestion[] = [
     title: "체중 증가 추세",
     detail: "최근 4주간 체중이 조금씩 증가하고 있어요. 급여량과 간식 빈도를 함께 확인하세요.",
     action: "관리 가이드",
+    actionHref: "/analysis",
     tone: "orange",
   },
   {
@@ -119,14 +84,15 @@ export const suggestions: Suggestion[] = [
     title: "예방접종 시기 도래",
     detail: "종합백신 접종 시기가 3일 남았습니다. 알림을 확인하고 일정을 잡아보세요.",
     action: "일정 확인",
+    actionHref: "/more",
     tone: "blue",
   },
 ];
 
 export const metrics: MetricSeries[] = [
-  { label: "식사량", unit: "g", values: [120, 98, 110, 105, 114, 108, 118], trend: "지난주 대비 +5%" },
-  { label: "활동량", unit: "분", values: [42, 35, 28, 31, 24, 30, 26], trend: "지난주 대비 -10%" },
-  { label: "체중", unit: "kg", values: [4.0, 4.0, 4.1, 4.1, 4.2, 4.2, 4.2], trend: "완만한 증가" },
+  { id: "meal", label: "식사량", unit: "g", values: [120, 98, 110, 105, 114, 108, 118], trend: "지난주 대비 +5%" },
+  { id: "activity", label: "활동량", unit: "분", values: [42, 35, 28, 31, 24, 30, 26], trend: "지난주 대비 -10%" },
+  { id: "weight", label: "체중", unit: "kg", values: [4.0, 4.0, 4.1, 4.1, 4.2, 4.2, 4.2], trend: "완만한 증가" },
 ];
 
 export const todos = [
@@ -142,3 +108,50 @@ export const categoryLabels: Record<RecordCategory, string> = {
   medical: "병원/접종",
   behavior: "행동",
 };
+
+export const communityBoards: CommunityBoard[] = ["유기동물", "용품 나눔", "자유게시판", "행동 고민", "후기"];
+
+export const communityPosts: CommunityPost[] = [
+  {
+    id: "c1",
+    board: "행동 고민",
+    title: "말티즈 산책 줄면 쉽게 흥분하나요?",
+    comments: 8,
+    likes: 26,
+    feeds: ["인기글", "최신글"],
+  },
+  {
+    id: "c2",
+    board: "용품 나눔",
+    title: "소형견 하네스 나눔합니다",
+    comments: 3,
+    likes: 15,
+    distance: "1.2km",
+    feeds: ["인기글", "내 주변"],
+  },
+  {
+    id: "c3",
+    board: "자유게시판",
+    title: "분리불안 어떻게 기록하고 계세요?",
+    comments: 12,
+    likes: 32,
+    feeds: ["인기글"],
+  },
+  {
+    id: "c4",
+    board: "후기",
+    title: "AI 제안대로 산책을 나눠본 후기",
+    comments: 5,
+    likes: 18,
+    feeds: ["최신글"],
+  },
+  {
+    id: "c5",
+    board: "유기동물",
+    title: "근처 임시 보호 정보 공유합니다",
+    comments: 4,
+    likes: 21,
+    distance: "2.4km",
+    feeds: ["내 주변", "최신글"],
+  },
+];

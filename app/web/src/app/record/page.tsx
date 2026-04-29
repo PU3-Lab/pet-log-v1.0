@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
-import { categoryLabels, type RecordCategory } from "@/lib/mock-data";
+import { categoryLabels } from "@/lib/mock-data";
+import type { RecordCategory } from "@/lib/types";
 
 const categoryOptions: { label: string; value: RecordCategory }[] = [
   { label: "식사", value: "meal" },

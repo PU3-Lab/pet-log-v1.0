@@ -1,6 +1,13 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Card, Pill, SectionHeader } from "@/components/ui";
 import { suggestions } from "@/lib/mock-data";
+import type { SuggestionCategory } from "@/lib/types";
+
+type SuggestionFilter = "전체" | SuggestionCategory;
 
 const toneClasses = {
   green: "bg-[#edf8ed] text-[#16804b]",
@@ -8,13 +15,23 @@ const toneClasses = {
   blue: "bg-[#eaf2ff] text-[#2e67a7]",
 };
 
+const suggestionFilters: SuggestionFilter[] = ["전체", "행동", "건강", "생활"];
+
 export default function SuggestionsPage() {
+  const [activeFilter, setActiveFilter] = useState<SuggestionFilter>("전체");
+  const filteredSuggestions = useMemo(() => {
+    if (activeFilter === "전체") {
+      return suggestions;
+    }
+    return suggestions.filter((suggestion) => suggestion.category === activeFilter);
+  }, [activeFilter]);
+
   return (
     <AppShell subtitle="맞춤형 행동 개선 가이드" title="제안">
       <div className="space-y-5">
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {["전체", "행동", "건강", "생활"].map((filter, index) => (
-            <Pill active={index === 0} key={filter}>
+          {suggestionFilters.map((filter) => (
+            <Pill active={activeFilter === filter} key={filter} onClick={() => setActiveFilter(filter)}>
               {filter}
             </Pill>
           ))}
@@ -23,7 +40,7 @@ export default function SuggestionsPage() {
         <section>
           <SectionHeader title="오늘의 제안" />
           <div className="space-y-3">
-            {suggestions.map((suggestion) => (
+            {filteredSuggestions.map((suggestion) => (
               <Card key={suggestion.id}>
                 <div className="flex gap-3">
                   <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-sm font-black ${toneClasses[suggestion.tone]}`}>
@@ -32,13 +49,22 @@ export default function SuggestionsPage() {
                   <div className="min-w-0 flex-1">
                     <h2 className="text-base font-black text-[#1f2922]">{suggestion.title}</h2>
                     <p className="mt-2 text-sm leading-6 text-[#667262]">{suggestion.detail}</p>
-                    <button className="mt-4 h-10 w-full rounded-xl bg-[#16804b] text-sm font-bold text-white">
+                    <Link
+                      className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#16804b] text-sm font-bold text-white"
+                      href={suggestion.actionHref}
+                    >
                       {suggestion.action}
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </Card>
             ))}
+            {filteredSuggestions.length === 0 ? (
+              <Card className="p-5 text-center">
+                <h2 className="text-sm font-bold text-[#1f2922]">표시할 제안이 없습니다.</h2>
+                <p className="mt-2 text-sm leading-6 text-[#667262]">다른 카테고리를 선택해보세요.</p>
+              </Card>
+            ) : null}
           </div>
         </section>
 
