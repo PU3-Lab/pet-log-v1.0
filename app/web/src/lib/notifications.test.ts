@@ -1,5 +1,10 @@
 import { strict as assert } from "node:assert";
-import { getCareNotifications } from "./notifications";
+import {
+  getCareNotifications,
+  getNotificationReadSummary,
+  getNotificationsWithReadState,
+  getUnreadNotificationCount,
+} from "./notifications";
 import { defaultNotificationPreferences } from "./settings";
 import type { RecordEntry } from "./types";
 
@@ -18,6 +23,17 @@ const baseRecords: RecordEntry[] = [
 const missingCare = getCareNotifications(baseRecords);
 assert.ok(missingCare.some((notification) => notification.id === "missing-stool"));
 assert.ok(missingCare.some((notification) => notification.id === "missing-walk"));
+
+const readAwareMissingCare = getNotificationsWithReadState(missingCare, ["missing-stool"]);
+assert.equal(readAwareMissingCare.find((notification) => notification.id === "missing-stool")?.isRead, true);
+assert.equal(readAwareMissingCare.find((notification) => notification.id === "missing-walk")?.isRead, false);
+
+const readSummary = getNotificationReadSummary(readAwareMissingCare);
+assert.equal(readSummary.totalCount, missingCare.length);
+assert.equal(readSummary.readCount, 1);
+assert.equal(readSummary.unreadCount, missingCare.length - 1);
+assert.equal(readSummary.hasUnread, true);
+assert.equal(getUnreadNotificationCount(missingCare, ["missing-stool"]), missingCare.length - 1);
 
 const disabledMissingRecordCare = getCareNotifications(baseRecords, [], "2026-04-29", {
   ...defaultNotificationPreferences,
