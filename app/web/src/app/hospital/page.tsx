@@ -14,6 +14,7 @@ export default function HospitalPage() {
     [profile, records, hospitalState.symptomMemo],
   );
   const nearbyHospitals = useMemo(() => getNearbyAnimalHospitals(hospitalState.locationStatus === "ready"), [hospitalState.locationStatus]);
+  const checkedChecklistCount = hospitalState.checkedChecklistItems.length;
 
   function requestNearbyLocation() {
     if (!("geolocation" in navigator)) {
@@ -44,6 +45,23 @@ export default function HospitalPage() {
           <h2 className="mt-1 text-xl font-black text-[#1f2922]">{summary.title}</h2>
           <p className="mt-2 text-sm leading-6 text-[#667262]">{summary.detail}</p>
         </Card>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">주의 기록</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{summary.warningRecords.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">체크</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">
+              {checkedChecklistCount}/{summary.checklist.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">병원</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{hospitalState.selectedHospitalId ? "선택" : "미정"}</p>
+          </div>
+        </div>
 
         <section>
           <SectionHeader title="증상 및 변화 메모" />

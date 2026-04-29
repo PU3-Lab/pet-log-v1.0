@@ -46,6 +46,21 @@ export default function SharedCarePage() {
           <p className="mt-2 text-sm leading-6 text-[#667262]">{summary.detail}</p>
         </Card>
 
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">멤버</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{summary.members.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">초대 준비</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{sharedCareState.preparedInvites.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">알림</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{sharedCareState.notificationSharingEnabled ? "ON" : "OFF"}</p>
+          </div>
+        </div>
+
         <section>
           <SectionHeader title="보호자 초대" />
           <Card>

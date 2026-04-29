@@ -9,6 +9,14 @@ import type { CommunityBoard, CommunityFeed } from "@/lib/types";
 
 const feedFilters: CommunityFeed[] = ["인기글", "최신글", "내 주변"];
 
+const boardStyles: Record<CommunityBoard, { marker: string; text: string; bg: string }> = {
+  유기동물: { marker: "bg-[#be4c3c]", text: "text-[#be4c3c]", bg: "bg-[#fff7f5]" },
+  "용품 나눔": { marker: "bg-[#bb721e]", text: "text-[#a4651a]", bg: "bg-[#fffaf0]" },
+  자유게시판: { marker: "bg-[#16804b]", text: "text-[#16804b]", bg: "bg-[#edf8ed]" },
+  "행동 고민": { marker: "bg-[#7256b8]", text: "text-[#7256b8]", bg: "bg-[#f5f1ff]" },
+  후기: { marker: "bg-[#356aa8]", text: "text-[#356aa8]", bg: "bg-[#f6f9ff]" },
+};
+
 export default function CommunityPage() {
   const [posts, setPosts] = useState(communityPosts);
   const [comments, setComments] = useState(communityComments);
@@ -64,29 +72,87 @@ export default function CommunityPage() {
   return (
     <AppShell subtitle="커뮤니티" title="커뮤니티">
       <div className="space-y-5">
-        <div className="grid grid-cols-5 gap-2">
+        <Card className="bg-gradient-to-br from-white to-[#f6f9ff]">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#356aa8]">동네 보호자 피드</p>
+              <h2 className="mt-1 text-lg font-black text-[#1f2922]">
+                {activeBoard ? `${activeBoard} 중심으로 보기` : "필요한 게시판을 빠르게 찾기"}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[#667262]">
+                {visiblePosts.length}개 글 · 저장 {savedPostIds.length}개 · {activeFeed}
+              </p>
+            </div>
+            <button
+              className="h-10 shrink-0 rounded-xl bg-[#16804b] px-3 text-sm font-black text-white"
+              onClick={() => setIsComposerOpen((current) => !current)}
+              type="button"
+            >
+              {isComposerOpen ? "닫기" : "글쓰기"}
+            </button>
+          </div>
+        </Card>
+
+        {isComposerOpen ? (
+          <Card>
+            <div className="grid grid-cols-2 gap-2">
+              {communityBoards.map((board) => (
+                <Pill active={draftBoard === board} className="w-full px-2 text-xs" key={board} onClick={() => setDraftBoard(board)}>
+                  {board}
+                </Pill>
+              ))}
+            </div>
+            <input
+              className="mt-3 h-11 w-full rounded-xl border border-[#dce7d7] bg-[#fbfdf8] px-3 text-sm font-bold text-[#1f2922] outline-none focus:border-[#16804b]"
+              onChange={(event) => setDraftTitle(event.target.value)}
+              placeholder="제목"
+              value={draftTitle}
+            />
+            <textarea
+              className="mt-3 min-h-28 w-full resize-none rounded-xl border border-[#dce7d7] bg-[#fbfdf8] p-3 text-sm font-semibold leading-6 text-[#1f2922] outline-none focus:border-[#16804b]"
+              onChange={(event) => setDraftBody(event.target.value)}
+              placeholder="내용을 입력하세요"
+              value={draftBody}
+            />
+            <button
+              className="mt-3 h-11 w-full rounded-xl bg-[#16804b] text-sm font-black text-white disabled:bg-[#cfd8ca]"
+              disabled={!draftTitle.trim() || !draftBody.trim()}
+              onClick={submitPost}
+              type="button"
+            >
+              게시하기
+            </button>
+          </Card>
+        ) : null}
+
+        <div className="grid grid-cols-2 gap-2">
           {communityBoards.map((item) => {
             const active = activeBoard === item;
+            const postCount = posts.filter((post) => post.board === item).length;
+            const style = boardStyles[item];
             return (
               <button
                 aria-pressed={active}
-                className={`rounded-2xl p-2 text-center shadow-[0_8px_22px_rgba(49,65,44,0.06)] transition ${
-                  active ? "bg-[#16804b] text-white" : "bg-white text-[#4a5547]"
+                className={`min-h-20 rounded-2xl border p-3 text-left shadow-[0_8px_22px_rgba(49,65,44,0.06)] transition ${
+                  active ? "border-[#16804b] bg-[#16804b] text-white" : `border-[#e0e6da] ${style.bg} text-[#4a5547]`
                 }`}
                 key={item}
                 onClick={() => setActiveBoard(active ? null : item)}
                 type="button"
               >
-                <div className={`mx-auto mb-2 h-10 w-10 rounded-full ${active ? "bg-white/25" : "bg-[#eef5e9]"}`} />
-                <p className={`break-keep text-[11px] font-bold ${active ? "text-white" : "text-[#4a5547]"}`}>{item}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${active ? "bg-white" : style.marker}`} />
+                  <span className={`text-[11px] font-black ${active ? "text-white/85" : style.text}`}>{postCount}개</span>
+                </div>
+                <p className={`mt-3 break-keep text-sm font-black ${active ? "text-white" : "text-[#1f2922]"}`}>{item}</p>
               </button>
             );
           })}
         </div>
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {feedFilters.map((filter) => (
-            <Pill active={activeFeed === filter} key={filter} onClick={() => setActiveFeed(filter)}>
+            <Pill active={activeFeed === filter} className="w-full px-2 text-xs" key={filter} onClick={() => setActiveFeed(filter)}>
               {filter}
             </Pill>
           ))}
@@ -165,7 +231,7 @@ export default function CommunityPage() {
                   onClick={() => toggleSavedPost(selectedDetail.id)}
                   type="button"
                 >
-                  저장
+                  {savedPostIds.includes(selectedDetail.id) ? "저장됨" : "저장"}
                 </button>
               </div>
               <p className="mt-4 text-sm font-semibold leading-7 text-[#4d594b]">{selectedDetail.body}</p>
@@ -218,47 +284,6 @@ export default function CommunityPage() {
           </section>
         ) : null}
 
-        <section>
-          <button
-            className="h-12 w-full rounded-2xl bg-[#16804b] text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)]"
-            onClick={() => setIsComposerOpen((current) => !current)}
-            type="button"
-          >
-            {isComposerOpen ? "글쓰기 닫기" : "글쓰기"}
-          </button>
-
-          {isComposerOpen ? (
-            <Card className="mt-3">
-              <div className="grid grid-cols-2 gap-2">
-                {communityBoards.map((board) => (
-                  <Pill active={draftBoard === board} className="w-full px-2 text-xs" key={board} onClick={() => setDraftBoard(board)}>
-                    {board}
-                  </Pill>
-                ))}
-              </div>
-              <input
-                className="mt-3 h-11 w-full rounded-xl border border-[#dce7d7] bg-[#fbfdf8] px-3 text-sm font-bold text-[#1f2922] outline-none focus:border-[#16804b]"
-                onChange={(event) => setDraftTitle(event.target.value)}
-                placeholder="제목"
-                value={draftTitle}
-              />
-              <textarea
-                className="mt-3 min-h-28 w-full resize-none rounded-xl border border-[#dce7d7] bg-[#fbfdf8] p-3 text-sm font-semibold leading-6 text-[#1f2922] outline-none focus:border-[#16804b]"
-                onChange={(event) => setDraftBody(event.target.value)}
-                placeholder="내용을 입력하세요"
-                value={draftBody}
-              />
-              <button
-                className="mt-3 h-11 w-full rounded-xl bg-[#16804b] text-sm font-black text-white disabled:bg-[#cfd8ca]"
-                disabled={!draftTitle.trim() || !draftBody.trim()}
-                onClick={submitPost}
-                type="button"
-              >
-                게시하기
-              </button>
-            </Card>
-          ) : null}
-        </section>
       </div>
     </AppShell>
   );

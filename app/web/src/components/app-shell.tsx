@@ -48,7 +48,7 @@ export function AppShell({ title, subtitle, action, bottomAction, children }: Ap
               ) : null}
               <div className="min-w-0">
                 {subtitle ? <p className="text-xs font-semibold text-[#16804b]">{subtitle}</p> : null}
-                <h1 className="mt-1 truncate text-xl font-bold tracking-[-0.01em] text-[#1f2922]">{title}</h1>
+                <h1 className="mt-1 truncate text-xl font-bold text-[#1f2922]">{title}</h1>
               </div>
             </div>
             {action ?? (

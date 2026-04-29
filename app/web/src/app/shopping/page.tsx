@@ -45,6 +45,21 @@ export default function ShoppingPage() {
           <p className="mt-3 text-xs font-bold text-[#bb721e]">저장한 추천 {shoppingState.savedRecommendationIds.length}개</p>
         </Card>
 
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">추천</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{recommendations.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">저장</p>
+            <p className="mt-1 text-base font-black text-[#1f2922]">{shoppingState.savedRecommendationIds.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <p className="text-[11px] font-bold text-[#778174]">필터</p>
+            <p className="mt-1 truncate text-base font-black text-[#1f2922]">{shoppingState.activeFilter}</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-2">
           {shoppingFilters.map((filter) => (
             <Pill
