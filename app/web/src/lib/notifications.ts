@@ -4,6 +4,17 @@ import type { CareNotification, CareSchedule, NotificationPreferences, RecordEnt
 
 const recentRecordLimit = 7;
 
+export type CareNotificationWithReadState = CareNotification & {
+  isRead: boolean;
+};
+
+export type NotificationReadSummary = {
+  totalCount: number;
+  readCount: number;
+  unreadCount: number;
+  hasUnread: boolean;
+};
+
 function formatToday(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -90,4 +101,32 @@ export function getCareNotifications(
   }
 
   return notifications;
+}
+
+export function getNotificationsWithReadState(
+  notifications: CareNotification[],
+  readNotificationIds: string[],
+): CareNotificationWithReadState[] {
+  const readIds = new Set(readNotificationIds);
+  return notifications.map((notification) => ({
+    ...notification,
+    isRead: readIds.has(notification.id),
+  }));
+}
+
+export function getNotificationReadSummary(notifications: CareNotificationWithReadState[]): NotificationReadSummary {
+  const readCount = notifications.filter((notification) => notification.isRead).length;
+  const totalCount = notifications.length;
+  const unreadCount = totalCount - readCount;
+
+  return {
+    totalCount,
+    readCount,
+    unreadCount,
+    hasUnread: unreadCount > 0,
+  };
+}
+
+export function getUnreadNotificationCount(notifications: CareNotification[], readNotificationIds: string[]) {
+  return getNotificationReadSummary(getNotificationsWithReadState(notifications, readNotificationIds)).unreadCount;
 }

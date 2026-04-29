@@ -30,6 +30,7 @@ type StoredPetLogState = {
   records: RecordEntry[];
   schedules?: CareSchedule[];
   settings?: AppSettings;
+  readNotificationIds?: string[];
 };
 
 type PetLogContextValue = {
@@ -37,12 +38,15 @@ type PetLogContextValue = {
   records: RecordEntry[];
   schedules: CareSchedule[];
   settings: AppSettings;
+  readNotificationIds: string[];
   addRecord: (input: NewRecordInput) => RecordEntry;
   updateRecord: (id: string, input: UpdateRecordInput) => void;
   deleteRecord: (id: string) => void;
   updateProfile: (input: PetProfile) => void;
   updateSettings: (input: AppSettings) => void;
   resetPetLogData: () => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: (ids: string[]) => void;
   addSchedule: (input: NewScheduleInput) => CareSchedule;
   toggleScheduleDone: (id: string) => void;
   deleteSchedule: (id: string) => void;
@@ -157,7 +161,9 @@ function parseStoredState(value: string | null): StoredPetLogState | null {
       Array.isArray(parsed.records) &&
       parsed.records.every(isRecordEntry) &&
       (parsed.schedules === undefined || (Array.isArray(parsed.schedules) && parsed.schedules.every(isCareSchedule))) &&
-      (parsed.settings === undefined || isAppSettings(parsed.settings))
+      (parsed.settings === undefined || isAppSettings(parsed.settings)) &&
+      (parsed.readNotificationIds === undefined ||
+        (Array.isArray(parsed.readNotificationIds) && parsed.readNotificationIds.every((id) => typeof id === "string")))
     ) {
       return parsed as StoredPetLogState;
     }
@@ -173,6 +179,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
   const [records, setRecords] = useState<RecordEntry[]>(initialRecords);
   const [schedules, setSchedules] = useState<CareSchedule[]>(initialSchedules);
   const [settings, setSettings] = useState<AppSettings>(defaultAppSettings);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [isStorageReady, setIsStorageReady] = useState(false);
 
   useEffect(() => {
@@ -189,6 +196,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
         setRecords(storedState.records);
         setSchedules(storedState.schedules ?? initialSchedules);
         setSettings(storedState.settings ?? defaultAppSettings);
+        setReadNotificationIds(storedState.readNotificationIds ?? []);
       }
       setIsStorageReady(true);
     }, 0);
@@ -207,6 +215,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       records,
       schedules,
       settings,
+      readNotificationIds,
     };
 
     try {
@@ -214,7 +223,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     } catch {
       // 저장소 사용이 막힌 환경에서는 현재 세션 상태만 유지합니다.
     }
-  }, [isStorageReady, profile, records, schedules, settings]);
+  }, [isStorageReady, profile, records, schedules, settings, readNotificationIds]);
 
   const addRecord = useCallback((input: NewRecordInput) => {
     const now = new Date();
@@ -278,6 +287,15 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     setRecords(initialRecords);
     setSchedules(initialSchedules);
     setSettings(defaultAppSettings);
+    setReadNotificationIds([]);
+  }, []);
+
+  const markNotificationRead = useCallback((id: string) => {
+    setReadNotificationIds((current) => (current.includes(id) ? current : [...current, id]));
+  }, []);
+
+  const markAllNotificationsRead = useCallback((ids: string[]) => {
+    setReadNotificationIds((current) => Array.from(new Set([...current, ...ids])));
   }, []);
 
   const addSchedule = useCallback((input: NewScheduleInput) => {
@@ -312,12 +330,15 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       records,
       schedules,
       settings,
+      readNotificationIds,
       addRecord,
       updateRecord,
       deleteRecord,
       updateProfile,
       updateSettings,
       resetPetLogData,
+      markNotificationRead,
+      markAllNotificationsRead,
       addSchedule,
       toggleScheduleDone,
       deleteSchedule,
@@ -327,12 +348,15 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       records,
       schedules,
       settings,
+      readNotificationIds,
       addRecord,
       updateRecord,
       deleteRecord,
       updateProfile,
       updateSettings,
       resetPetLogData,
+      markNotificationRead,
+      markAllNotificationsRead,
       addSchedule,
       toggleScheduleDone,
       deleteSchedule,

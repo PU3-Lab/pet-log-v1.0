@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, Pill, SectionHeader } from "@/components/ui";
-import { getCareNotifications } from "@/lib/notifications";
+import { getCareNotifications, getNotificationReadSummary, getNotificationsWithReadState } from "@/lib/notifications";
 import type { CareNotificationCategory, CareNotificationTone } from "@/lib/types";
 
 type NotificationFilter = "전체" | CareNotificationCategory;
@@ -20,12 +20,17 @@ const toneClasses: Record<CareNotificationTone, string> = {
 };
 
 export default function NotificationsPage() {
-  const { records, schedules, settings } = usePetLog();
+  const { markAllNotificationsRead, markNotificationRead, readNotificationIds, records, schedules, settings } = usePetLog();
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>("전체");
-  const notifications = useMemo(
+  const baseNotifications = useMemo(
     () => getCareNotifications(records, schedules, undefined, settings.notificationPreferences),
     [records, schedules, settings.notificationPreferences],
   );
+  const notifications = useMemo(
+    () => getNotificationsWithReadState(baseNotifications, readNotificationIds),
+    [baseNotifications, readNotificationIds],
+  );
+  const readSummary = useMemo(() => getNotificationReadSummary(notifications), [notifications]);
   const filteredNotifications = useMemo(() => {
     if (activeFilter === "전체") {
       return notifications;
@@ -37,9 +42,24 @@ export default function NotificationsPage() {
     <AppShell subtitle="중요한 케어 신호" title="알림">
       <div className="space-y-5">
         <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
-          <p className="text-sm font-bold text-[#16804b]">오늘 확인할 알림</p>
-          <h2 className="mt-1 text-2xl font-black text-[#1f2922]">{notifications.length}개</h2>
-          <p className="mt-2 text-sm leading-6 text-[#667262]">기록 누락, 주의 기록 후속 확인, 예정된 케어 일정을 모아 보여줍니다.</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-[#16804b]">오늘 확인할 알림</p>
+              <h2 className="mt-1 text-2xl font-black text-[#1f2922]">읽지 않음 {readSummary.unreadCount}개</h2>
+            </div>
+            {readSummary.hasUnread ? (
+              <button
+                className="h-9 shrink-0 rounded-full border border-[#dbe4d4] bg-white px-3 text-xs font-black text-[#16804b] shadow-sm"
+                onClick={() => markAllNotificationsRead(notifications.map((notification) => notification.id))}
+                type="button"
+              >
+                모두 읽음
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-2 text-sm leading-6 text-[#667262]">
+            전체 {readSummary.totalCount}개 중 읽은 알림 {readSummary.readCount}개입니다.
+          </p>
         </Card>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -54,9 +74,13 @@ export default function NotificationsPage() {
           <SectionHeader title="알림 목록" />
           <div className="space-y-3">
             {filteredNotifications.map((notification) => (
-              <Card key={notification.id}>
+              <Card className={notification.isRead ? "bg-white/70" : "border-[#b8dec4] bg-white"} key={notification.id}>
                 <div className="flex gap-3">
-                  <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-sm font-black ${toneClasses[notification.tone]}`}>
+                  <div
+                    className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-sm font-black ${
+                      notification.isRead ? "bg-[#f0f3ed] text-[#7d8879]" : toneClasses[notification.tone]
+                    }`}
+                  >
                     {notification.category}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -66,10 +90,29 @@ export default function NotificationsPage() {
                         {notification.dueLabel}
                       </span>
                     </div>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <span
+                        className={`inline-flex h-7 items-center rounded-full px-2.5 text-[11px] font-black ${
+                          notification.isRead ? "bg-[#f0f3ed] text-[#7d8879]" : "bg-[#e3f3e8] text-[#16804b]"
+                        }`}
+                      >
+                        {notification.isRead ? "읽음" : "새 알림"}
+                      </span>
+                      {!notification.isRead ? (
+                        <button
+                          className="h-8 shrink-0 rounded-full border border-[#dbe4d4] px-3 text-xs font-bold text-[#16804b]"
+                          onClick={() => markNotificationRead(notification.id)}
+                          type="button"
+                        >
+                          읽음
+                        </button>
+                      ) : null}
+                    </div>
                     <p className="mt-2 text-sm leading-6 text-[#667262]">{notification.detail}</p>
                     <Link
                       className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#16804b] text-sm font-bold text-white"
                       href={notification.actionHref}
+                      onClick={() => markNotificationRead(notification.id)}
                     >
                       {notification.action}
                     </Link>
