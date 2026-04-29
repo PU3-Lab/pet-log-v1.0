@@ -141,10 +141,11 @@ export default function TimelinePage() {
           />
         </label>
 
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="grid grid-cols-2 gap-2">
           {timelineFilters.map((filter) => (
             <Pill
               active={activeFilter === filter.value}
+              className="w-full px-2 text-xs"
               key={filter.value}
               onClick={() => {
                 setActiveFilter(filter.value);
