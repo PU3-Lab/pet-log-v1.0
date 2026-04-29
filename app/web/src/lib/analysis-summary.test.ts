@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import { getAnalysisMetrics, getAnalysisReport, getVetBrief, getVisibleAnalysisMetrics } from "./analysis-summary";
+import { getAnalysisMetrics, getAnalysisReport, getAnalysisTrendChart, getVetBrief, getVisibleAnalysisMetrics } from "./analysis-summary";
 import type { RecordEntry } from "./types";
 
 const records: RecordEntry[] = [
@@ -53,6 +53,20 @@ assert.deepEqual(
 const visibleBehaviorMetrics = getVisibleAnalysisMetrics(metrics, "behavior");
 assert.deepEqual(
   visibleBehaviorMetrics.map((metric) => metric.id),
+  ["behavior"],
+);
+
+const allTrendChart = getAnalysisTrendChart(metrics, "all");
+assert.equal(allTrendChart.title, "전체 변화");
+assert.deepEqual(
+  allTrendChart.series.map((series) => series.id),
+  ["meal", "walk", "stool", "behavior"],
+);
+
+const behaviorTrendChart = getAnalysisTrendChart(metrics, "behavior");
+assert.equal(behaviorTrendChart.title, "행동");
+assert.deepEqual(
+  behaviorTrendChart.series.map((series) => series.id),
   ["behavior"],
 );
 
