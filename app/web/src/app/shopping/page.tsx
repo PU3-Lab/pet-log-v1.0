@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, Pill, SectionHeader } from "@/components/ui";
-import { getShoppingRecommendations, type ShoppingRecommendation } from "@/lib/expansion-features";
-
-type ShoppingFilter = "전체" | ShoppingRecommendation["category"];
+import { shoppingFilters, toggleSavedRecommendation } from "@/lib/expansion-state";
+import { getShoppingRecommendations } from "@/lib/expansion-features";
+import type { ShoppingFilter } from "@/lib/expansion-state";
 
 const toneClasses = {
   green: "bg-[#edf8ed] text-[#16804b]",
@@ -15,20 +15,23 @@ const toneClasses = {
   blue: "bg-[#eaf2ff] text-[#2e67a7]",
 };
 
-const filters: ShoppingFilter[] = ["전체", "사료", "건강 용품", "케어 용품", "생활 용품"];
-
 export default function ShoppingPage() {
-  const { profile, records } = usePetLog();
-  const [activeFilter, setActiveFilter] = useState<ShoppingFilter>("전체");
-  const [expandedReasonId, setExpandedReasonId] = useState<string | null>(null);
+  const { profile, records, expansionState, updateShoppingState } = usePetLog();
+  const shoppingState = expansionState.shopping;
   const recommendations = useMemo(() => getShoppingRecommendations(profile, records), [profile, records]);
   const filteredRecommendations = useMemo(() => {
-    if (activeFilter === "전체") {
+    if (shoppingState.activeFilter === "전체") {
       return recommendations;
     }
 
-    return recommendations.filter((item) => item.category === activeFilter);
-  }, [activeFilter, recommendations]);
+    return recommendations.filter((item) => item.category === shoppingState.activeFilter);
+  }, [shoppingState.activeFilter, recommendations]);
+
+  function toggleSavedItem(recommendationId: string) {
+    updateShoppingState({
+      savedRecommendationIds: toggleSavedRecommendation(shoppingState.savedRecommendationIds, recommendationId),
+    });
+  }
 
   return (
     <AppShell subtitle="기록 기반 추천 흐름" title="쇼핑">
@@ -39,11 +42,17 @@ export default function ShoppingPage() {
           <p className="mt-2 text-sm leading-6 text-[#667262]">
             프로필, 식사 기록, 산책 기록, 행동 기록을 근거로 사료와 케어 용품 추천 화면을 구성합니다.
           </p>
+          <p className="mt-3 text-xs font-bold text-[#bb721e]">저장한 추천 {shoppingState.savedRecommendationIds.length}개</p>
         </Card>
 
         <div className="grid grid-cols-2 gap-2">
-          {filters.map((filter) => (
-            <Pill active={activeFilter === filter} className="w-full px-2 text-xs" key={filter} onClick={() => setActiveFilter(filter)}>
+          {shoppingFilters.map((filter) => (
+            <Pill
+              active={shoppingState.activeFilter === filter}
+              className="w-full px-2 text-xs"
+              key={filter}
+              onClick={() => updateShoppingState({ activeFilter: filter as ShoppingFilter })}
+            >
               {filter}
             </Pill>
           ))}
@@ -66,15 +75,28 @@ export default function ShoppingPage() {
                 </div>
                 <button
                   className="mt-4 h-10 w-full rounded-xl border border-[#dbe4d4] bg-white text-sm font-bold text-[#16804b]"
-                  aria-expanded={expandedReasonId === item.id}
-                  onClick={() => setExpandedReasonId((current) => (current === item.id ? null : item.id))}
+                  aria-expanded={shoppingState.expandedReasonId === item.id}
+                  onClick={() =>
+                    updateShoppingState({
+                      expandedReasonId: shoppingState.expandedReasonId === item.id ? null : item.id,
+                    })
+                  }
                   type="button"
                 >
-                  {expandedReasonId === item.id ? "추천 이유 닫기" : "추천 이유 보기"}
+                  {shoppingState.expandedReasonId === item.id ? "추천 이유 닫기" : "추천 이유 보기"}
                 </button>
-                {expandedReasonId === item.id ? (
+                {shoppingState.expandedReasonId === item.id ? (
                   <p className="mt-3 rounded-xl bg-[#f8faf5] px-3 py-2 text-xs font-semibold leading-5 text-[#3d4639]">{item.reason}</p>
                 ) : null}
+                <button
+                  className={`mt-3 h-10 w-full rounded-xl text-sm font-bold ${
+                    shoppingState.savedRecommendationIds.includes(item.id) ? "bg-[#16804b] text-white" : "bg-[#f4f7f0] text-[#16804b]"
+                  }`}
+                  onClick={() => toggleSavedItem(item.id)}
+                  type="button"
+                >
+                  {shoppingState.savedRecommendationIds.includes(item.id) ? "저장됨" : "추천 저장"}
+                </button>
               </Card>
             ))}
           </div>

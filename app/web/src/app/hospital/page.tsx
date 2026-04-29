@@ -1,32 +1,39 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
 import { getHospitalConnectSummary, getNearbyAnimalHospitals } from "@/lib/expansion-features";
 
-type LocationStatus = "idle" | "loading" | "ready" | "blocked";
-
 export default function HospitalPage() {
-  const { profile, records } = usePetLog();
-  const [symptomMemo, setSymptomMemo] = useState("");
-  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
-  const summary = useMemo(() => getHospitalConnectSummary(profile, records, symptomMemo), [profile, records, symptomMemo]);
-  const nearbyHospitals = useMemo(() => getNearbyAnimalHospitals(locationStatus === "ready"), [locationStatus]);
+  const { profile, records, expansionState, updateHospitalState } = usePetLog();
+  const hospitalState = expansionState.hospital;
+  const summary = useMemo(
+    () => getHospitalConnectSummary(profile, records, hospitalState.symptomMemo),
+    [profile, records, hospitalState.symptomMemo],
+  );
+  const nearbyHospitals = useMemo(() => getNearbyAnimalHospitals(hospitalState.locationStatus === "ready"), [hospitalState.locationStatus]);
 
   function requestNearbyLocation() {
     if (!("geolocation" in navigator)) {
-      setLocationStatus("blocked");
+      updateHospitalState({ locationStatus: "blocked" });
       return;
     }
 
-    setLocationStatus("loading");
+    updateHospitalState({ locationStatus: "loading" });
     navigator.geolocation.getCurrentPosition(
-      () => setLocationStatus("ready"),
-      () => setLocationStatus("blocked"),
+      () => updateHospitalState({ locationStatus: "ready" }),
+      () => updateHospitalState({ locationStatus: "blocked" }),
       { enableHighAccuracy: false, maximumAge: 300000, timeout: 5000 },
     );
+  }
+
+  function toggleChecklistItem(item: string) {
+    const checkedChecklistItems = hospitalState.checkedChecklistItems.includes(item)
+      ? hospitalState.checkedChecklistItems.filter((current) => current !== item)
+      : [...hospitalState.checkedChecklistItems, item];
+    updateHospitalState({ checkedChecklistItems });
   }
 
   return (
@@ -45,12 +52,12 @@ export default function HospitalPage() {
               <span className="text-xs font-bold text-[#778174]">병원에 말할 내용을 정리하세요</span>
               <textarea
                 className="mt-2 min-h-28 w-full resize-none rounded-xl border border-[#dde6d6] bg-white p-3 text-sm leading-6 text-[#263022] outline-none focus:border-[#16804b] focus:ring-2 focus:ring-[#16804b]/15"
-                onChange={(event) => setSymptomMemo(event.target.value)}
+                onChange={(event) => updateHospitalState({ symptomMemo: event.target.value })}
                 placeholder="예: 어제부터 산책 중 자주 멈추고 현관 앞에서 기다리는 시간이 길어졌어요."
-                value={symptomMemo}
+                value={hospitalState.symptomMemo}
               />
             </label>
-            <p className="mt-3 text-xs font-semibold leading-5 text-[#778174]">입력한 메모는 아래 리포트 미리보기에 바로 반영됩니다.</p>
+            <p className="mt-3 text-xs font-semibold leading-5 text-[#778174]">입력한 메모는 저장되어 새로고침 후에도 리포트 미리보기에 유지됩니다.</p>
           </Card>
         </section>
 
@@ -59,11 +66,15 @@ export default function HospitalPage() {
             action={
               <button
                 className="h-9 rounded-full border border-[#d8e3d2] bg-white px-3 text-xs font-bold text-[#16804b] disabled:text-[#9ca697]"
-                disabled={locationStatus === "loading"}
+                disabled={hospitalState.locationStatus === "loading"}
                 onClick={requestNearbyLocation}
                 type="button"
               >
-                {locationStatus === "loading" ? "확인 중" : locationStatus === "ready" ? "내 위치 적용됨" : "내 위치 찾기"}
+                {hospitalState.locationStatus === "loading"
+                  ? "확인 중"
+                  : hospitalState.locationStatus === "ready"
+                    ? "내 위치 적용됨"
+                    : "내 위치 찾기"}
               </button>
             }
             title="근처 동물병원"
@@ -91,9 +102,9 @@ export default function HospitalPage() {
               ))}
               <div className="absolute bottom-3 left-3 right-3 z-30 rounded-2xl bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
                 <p className="text-xs font-bold text-[#1f2922]">
-                  {locationStatus === "ready"
+                  {hospitalState.locationStatus === "ready"
                     ? "현재 위치 기준 가까운 병원 후보입니다."
-                    : locationStatus === "blocked"
+                    : hospitalState.locationStatus === "blocked"
                       ? "위치 권한이 없어 예상 거리로 표시합니다."
                       : "위치 권한을 허용하면 거리 표시를 더 명확히 보여줍니다."}
                 </p>
@@ -102,7 +113,14 @@ export default function HospitalPage() {
 
             <div className="mt-4 space-y-3">
               {nearbyHospitals.map((hospital, index) => (
-                <div className="rounded-2xl border border-[#e0e6da] bg-[#fbfdf8] p-3" key={hospital.id}>
+                <button
+                  className={`w-full rounded-2xl border p-3 text-left ${
+                    hospitalState.selectedHospitalId === hospital.id ? "border-[#16804b] bg-[#f4fbef]" : "border-[#e0e6da] bg-[#fbfdf8]"
+                  }`}
+                  key={hospital.id}
+                  onClick={() => updateHospitalState({ selectedHospitalId: hospital.id })}
+                  type="button"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-[#16804b]">
@@ -113,7 +131,9 @@ export default function HospitalPage() {
                         {hospital.addressHint} · {hospital.openLabel}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[#fff2df] px-2.5 py-1 text-xs font-bold text-[#bb721e]">지도</span>
+                    <span className="shrink-0 rounded-full bg-[#fff2df] px-2.5 py-1 text-xs font-bold text-[#bb721e]">
+                      {hospitalState.selectedHospitalId === hospital.id ? "선택됨" : "선택"}
+                    </span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {hospital.tags.map((tag) => (
@@ -122,7 +142,7 @@ export default function HospitalPage() {
                       </span>
                     ))}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
             <p className="mt-3 text-xs font-semibold leading-5 text-[#778174]">
@@ -176,9 +196,17 @@ export default function HospitalPage() {
           <Card>
             <div className="grid grid-cols-2 gap-2">
               {summary.checklist.map((item) => (
-                <div className="rounded-xl bg-[#f8faf5] px-3 py-3 text-xs font-bold leading-5 text-[#3d4639]" key={item}>
+                <button
+                  className={`rounded-xl px-3 py-3 text-left text-xs font-bold leading-5 ${
+                    hospitalState.checkedChecklistItems.includes(item) ? "bg-[#eaf5e5] text-[#16804b]" : "bg-[#f8faf5] text-[#3d4639]"
+                  }`}
+                  key={item}
+                  onClick={() => toggleChecklistItem(item)}
+                  type="button"
+                >
+                  <span className="mr-1">{hospitalState.checkedChecklistItems.includes(item) ? "✓" : "□"}</span>
                   {item}
-                </div>
+                </button>
               ))}
             </div>
           </Card>

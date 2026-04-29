@@ -1,27 +1,40 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, Pill, SectionHeader } from "@/components/ui";
+import { createPreparedInvite } from "@/lib/expansion-state";
 import { getSharedCareSummary } from "@/lib/expansion-features";
+import type { SharedCareRole } from "@/lib/expansion-state";
 
 export default function SharedCarePage() {
-  const { profile, records } = usePetLog();
-  const [inviteTarget, setInviteTarget] = useState("");
-  const [selectedRole, setSelectedRole] = useState("공동 보호자");
-  const [draftInvite, setDraftInvite] = useState("");
-  const summary = useMemo(() => getSharedCareSummary(profile, records), [profile, records]);
+  const { profile, records, expansionState, updateSharedCareState } = usePetLog();
+  const sharedCareState = expansionState.sharedCare;
+  const summary = useMemo(
+    () =>
+      getSharedCareSummary(
+        profile,
+        records,
+        sharedCareState.preparedInvites,
+        sharedCareState.notificationSharingEnabled,
+      ),
+    [profile, records, sharedCareState.preparedInvites, sharedCareState.notificationSharingEnabled],
+  );
 
   function saveInviteDraft() {
-    const target = inviteTarget.trim();
+    const target = sharedCareState.inviteTarget.trim();
     if (!target) {
-      setDraftInvite("초대할 이메일 또는 연락처를 입력해주세요.");
+      updateSharedCareState({ inviteDraftMessage: "초대할 이메일 또는 연락처를 입력해주세요." });
       return;
     }
 
-    setDraftInvite(`${target} · ${selectedRole} 초대가 목업 상태로 준비되었습니다.`);
-    setInviteTarget("");
+    const preparedInvite = createPreparedInvite(target, sharedCareState.selectedRole);
+    updateSharedCareState({
+      inviteTarget: "",
+      inviteDraftMessage: `${target} · ${sharedCareState.selectedRole} 초대가 저장되었습니다.`,
+      preparedInvites: [preparedInvite, ...sharedCareState.preparedInvites],
+    });
   }
 
   return (
@@ -41,16 +54,21 @@ export default function SharedCarePage() {
                 <span className="text-xs font-bold text-[#778174]">이메일 또는 연락처</span>
                 <input
                   className="mt-1 h-11 w-full rounded-xl border border-[#dde6d6] bg-white px-3 text-sm font-semibold text-[#263022] outline-none focus:border-[#16804b] focus:ring-2 focus:ring-[#16804b]/15"
-                  onChange={(event) => setInviteTarget(event.target.value)}
+                  onChange={(event) => updateSharedCareState({ inviteTarget: event.target.value })}
                   placeholder="예: family@example.com"
-                  value={inviteTarget}
+                  value={sharedCareState.inviteTarget}
                 />
               </label>
               <div>
                 <p className="mb-2 text-xs font-bold text-[#778174]">역할</p>
                 <div className="grid grid-cols-1 gap-2">
                   {summary.roleOptions.map((role) => (
-                    <Pill active={selectedRole === role} className="w-full" key={role} onClick={() => setSelectedRole(role)}>
+                    <Pill
+                      active={sharedCareState.selectedRole === role}
+                      className="w-full"
+                      key={role}
+                      onClick={() => updateSharedCareState({ selectedRole: role as SharedCareRole })}
+                    >
                       {role}
                     </Pill>
                   ))}
@@ -61,9 +79,13 @@ export default function SharedCarePage() {
                 onClick={saveInviteDraft}
                 type="button"
               >
-                초대 준비
+                초대 저장
               </button>
-              {draftInvite ? <p className="rounded-xl bg-[#f4f7f0] px-3 py-2 text-sm font-semibold leading-6 text-[#3d4639]">{draftInvite}</p> : null}
+              {sharedCareState.inviteDraftMessage ? (
+                <p className="rounded-xl bg-[#f4f7f0] px-3 py-2 text-sm font-semibold leading-6 text-[#3d4639]">
+                  {sharedCareState.inviteDraftMessage}
+                </p>
+              ) : null}
             </div>
           </Card>
         </section>
@@ -100,8 +122,22 @@ export default function SharedCarePage() {
         </section>
 
         <Card className="bg-[#fffaf0]">
-          <p className="text-sm font-bold text-[#b56d19]">알림 공유 범위</p>
-          <p className="mt-2 text-sm leading-6 text-[#65533a]">{summary.notificationSharingDetail}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-[#b56d19]">알림 공유 범위</p>
+              <p className="mt-2 text-sm leading-6 text-[#65533a]">{summary.notificationSharingDetail}</p>
+            </div>
+            <button
+              aria-pressed={sharedCareState.notificationSharingEnabled}
+              className={`h-8 min-w-14 rounded-full px-3 text-xs font-black ${
+                sharedCareState.notificationSharingEnabled ? "bg-[#16804b] text-white" : "bg-white text-[#8a7050]"
+              }`}
+              onClick={() => updateSharedCareState({ notificationSharingEnabled: !sharedCareState.notificationSharingEnabled })}
+              type="button"
+            >
+              {sharedCareState.notificationSharingEnabled ? "ON" : "OFF"}
+            </button>
+          </div>
           <p className="mt-2 text-xs font-semibold leading-5 text-[#7b6b4d]">실제 초대 발송과 권한 검증은 서버 연결 후 적용합니다.</p>
         </Card>
       </div>

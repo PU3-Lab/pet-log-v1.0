@@ -1,4 +1,5 @@
 import { categoryLabels } from "./mock-data";
+import type { PreparedSharedCareInvite } from "./expansion-state";
 import type { PetProfile, RecordEntry } from "./types";
 
 export type ExpansionTone = "green" | "orange" | "red" | "blue";
@@ -99,11 +100,23 @@ const nearbyAnimalHospitals: Array<Omit<NearbyAnimalHospital, "distanceLabel"> &
   },
 ];
 
-export function getSharedCareSummary(profile: PetProfile, records: RecordEntry[]): SharedCareSummary {
+export function getSharedCareSummary(
+  profile: PetProfile,
+  records: RecordEntry[],
+  preparedInvites: PreparedSharedCareInvite[] = [],
+  notificationSharingEnabled = true,
+): SharedCareSummary {
   const latestRecord = records[0];
   const latestActivity = latestRecord
     ? `${profile.name} ${categoryLabels[latestRecord.category]} 기록이 ${latestRecord.time}에 업데이트됨`
     : `${profile.name}의 첫 기록을 기다리는 중`;
+  const inviteMembers = preparedInvites.map((invite) => ({
+    id: invite.id,
+    name: invite.target,
+    role: invite.role,
+    status: invite.status,
+    permission: invite.role === "읽기 전용" ? "기록 보기" : invite.role === "기록 담당" ? "기록 작성 · 알림 받기" : "기록 보기 · 알림 받기",
+  }));
 
   return {
     title: `${profile.name} 공동 관리`,
@@ -123,14 +136,18 @@ export function getSharedCareSummary(profile: PetProfile, records: RecordEntry[]
         status: "목업 상태",
         permission: "기록 보기 · 알림 받기",
       },
+      ...inviteMembers,
     ],
     roleOptions,
     activityItems: [
       latestActivity,
-      "주의 기록과 일정 알림은 공동 보호자에게도 공유되도록 설정됨",
+      notificationSharingEnabled ? "주의 기록과 일정 알림은 공동 보호자에게도 공유되도록 설정됨" : "공동 보호자 알림 공유가 꺼져 있음",
+      preparedInvites.length > 0 ? `${preparedInvites[0].target} 초대가 ${preparedInvites[0].role} 역할로 준비됨` : "새 보호자 초대는 저장 후 목록에 유지됨",
       "역할 변경과 초대 수락 기록은 서버 연결 후 이력으로 저장 예정",
     ],
-    notificationSharingDetail: "주의 기록, 기록 누락, 일정 리마인더 알림을 공동 보호자에게 함께 보여주는 흐름입니다.",
+    notificationSharingDetail: notificationSharingEnabled
+      ? "주의 기록, 기록 누락, 일정 리마인더 알림을 공동 보호자에게 함께 보여주는 흐름입니다."
+      : "현재 공동 보호자 알림 공유가 꺼져 있으며, 기록 화면 공유만 유지됩니다.",
   };
 }
 

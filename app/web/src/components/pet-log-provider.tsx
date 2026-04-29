@@ -2,8 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { structureRecord } from "@/lib/ai-insights";
+import { defaultExpansionState, normalizeExpansionState } from "@/lib/expansion-state";
 import { petProfile as initialProfile, records as initialRecords, schedules as initialSchedules } from "@/lib/mock-data";
 import { defaultAppSettings } from "@/lib/settings";
+import type { ExpansionState, HospitalState, SharedCareState, ShoppingState } from "@/lib/expansion-state";
 import type { AppSettings, CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
 
 type NewRecordInput = {
@@ -31,6 +33,7 @@ type StoredPetLogState = {
   schedules?: CareSchedule[];
   settings?: AppSettings;
   readNotificationIds?: string[];
+  expansionState?: ExpansionState;
 };
 
 type PetLogContextValue = {
@@ -39,11 +42,15 @@ type PetLogContextValue = {
   schedules: CareSchedule[];
   settings: AppSettings;
   readNotificationIds: string[];
+  expansionState: ExpansionState;
   addRecord: (input: NewRecordInput) => RecordEntry;
   updateRecord: (id: string, input: UpdateRecordInput) => void;
   deleteRecord: (id: string) => void;
   updateProfile: (input: PetProfile) => void;
   updateSettings: (input: AppSettings) => void;
+  updateSharedCareState: (input: Partial<SharedCareState>) => void;
+  updateHospitalState: (input: Partial<HospitalState>) => void;
+  updateShoppingState: (input: Partial<ShoppingState>) => void;
   resetPetLogData: () => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: (ids: string[]) => void;
@@ -165,7 +172,10 @@ function parseStoredState(value: string | null): StoredPetLogState | null {
       (parsed.readNotificationIds === undefined ||
         (Array.isArray(parsed.readNotificationIds) && parsed.readNotificationIds.every((id) => typeof id === "string")))
     ) {
-      return parsed as StoredPetLogState;
+      return {
+        ...(parsed as StoredPetLogState),
+        expansionState: normalizeExpansionState(parsed.expansionState),
+      };
     }
   } catch {
     return null;
@@ -180,6 +190,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
   const [schedules, setSchedules] = useState<CareSchedule[]>(initialSchedules);
   const [settings, setSettings] = useState<AppSettings>(defaultAppSettings);
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+  const [expansionState, setExpansionState] = useState<ExpansionState>(defaultExpansionState);
   const [isStorageReady, setIsStorageReady] = useState(false);
 
   useEffect(() => {
@@ -197,6 +208,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
         setSchedules(storedState.schedules ?? initialSchedules);
         setSettings(storedState.settings ?? defaultAppSettings);
         setReadNotificationIds(storedState.readNotificationIds ?? []);
+        setExpansionState(storedState.expansionState ?? defaultExpansionState);
       }
       setIsStorageReady(true);
     }, 0);
@@ -216,6 +228,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       schedules,
       settings,
       readNotificationIds,
+      expansionState,
     };
 
     try {
@@ -223,7 +236,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     } catch {
       // 저장소 사용이 막힌 환경에서는 현재 세션 상태만 유지합니다.
     }
-  }, [isStorageReady, profile, records, schedules, settings, readNotificationIds]);
+  }, [isStorageReady, profile, records, schedules, settings, readNotificationIds, expansionState]);
 
   const addRecord = useCallback((input: NewRecordInput) => {
     const now = new Date();
@@ -282,12 +295,43 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updateSharedCareState = useCallback((input: Partial<SharedCareState>) => {
+    setExpansionState((current) => ({
+      ...current,
+      sharedCare: {
+        ...current.sharedCare,
+        ...input,
+      },
+    }));
+  }, []);
+
+  const updateHospitalState = useCallback((input: Partial<HospitalState>) => {
+    setExpansionState((current) => ({
+      ...current,
+      hospital: {
+        ...current.hospital,
+        ...input,
+      },
+    }));
+  }, []);
+
+  const updateShoppingState = useCallback((input: Partial<ShoppingState>) => {
+    setExpansionState((current) => ({
+      ...current,
+      shopping: {
+        ...current.shopping,
+        ...input,
+      },
+    }));
+  }, []);
+
   const resetPetLogData = useCallback(() => {
     setProfile(initialProfile);
     setRecords(initialRecords);
     setSchedules(initialSchedules);
     setSettings(defaultAppSettings);
     setReadNotificationIds([]);
+    setExpansionState(defaultExpansionState);
   }, []);
 
   const markNotificationRead = useCallback((id: string) => {
@@ -331,11 +375,15 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       schedules,
       settings,
       readNotificationIds,
+      expansionState,
       addRecord,
       updateRecord,
       deleteRecord,
       updateProfile,
       updateSettings,
+      updateSharedCareState,
+      updateHospitalState,
+      updateShoppingState,
       resetPetLogData,
       markNotificationRead,
       markAllNotificationsRead,
@@ -349,11 +397,15 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       schedules,
       settings,
       readNotificationIds,
+      expansionState,
       addRecord,
       updateRecord,
       deleteRecord,
       updateProfile,
       updateSettings,
+      updateSharedCareState,
+      updateHospitalState,
+      updateShoppingState,
       resetPetLogData,
       markNotificationRead,
       markAllNotificationsRead,
