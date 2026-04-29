@@ -2,8 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { structureRecord } from "@/lib/ai-insights";
-import { petProfile as initialProfile, records as initialRecords } from "@/lib/mock-data";
-import type { PetProfile, RecordCategory, RecordEntry } from "@/lib/types";
+import { petProfile as initialProfile, records as initialRecords, schedules as initialSchedules } from "@/lib/mock-data";
+import type { CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
 
 type NewRecordInput = {
   category: RecordCategory;
@@ -15,19 +15,32 @@ type UpdateRecordInput = {
   detail: string;
 };
 
+type NewScheduleInput = {
+  category: ScheduleCategory;
+  title: string;
+  dueDate: string;
+  repeatLabel: string;
+  note: string;
+};
+
 type StoredPetLogState = {
   version: 1;
   profile: PetProfile;
   records: RecordEntry[];
+  schedules?: CareSchedule[];
 };
 
 type PetLogContextValue = {
   profile: PetProfile;
   records: RecordEntry[];
+  schedules: CareSchedule[];
   addRecord: (input: NewRecordInput) => RecordEntry;
   updateRecord: (id: string, input: UpdateRecordInput) => void;
   deleteRecord: (id: string) => void;
   updateProfile: (input: PetProfile) => void;
+  addSchedule: (input: NewScheduleInput) => CareSchedule;
+  toggleScheduleDone: (id: string) => void;
+  deleteSchedule: (id: string) => void;
 };
 
 const storageKey = "pet-log-state-v1";
@@ -53,6 +66,10 @@ function isRecordCategory(value: unknown): value is RecordCategory {
   return value === "meal" || value === "walk" || value === "stool" || value === "medical" || value === "behavior";
 }
 
+function isScheduleCategory(value: unknown): value is ScheduleCategory {
+  return value === "vaccination" || value === "medication" || value === "checkup" || value === "grooming" || value === "food";
+}
+
 function isRecordEntry(value: unknown): value is RecordEntry {
   if (!value || typeof value !== "object") {
     return false;
@@ -67,6 +84,23 @@ function isRecordEntry(value: unknown): value is RecordEntry {
     typeof record.title === "string" &&
     typeof record.detail === "string" &&
     (record.status === "normal" || record.status === "notice" || record.status === "alert")
+  );
+}
+
+function isCareSchedule(value: unknown): value is CareSchedule {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const schedule = value as CareSchedule;
+  return (
+    typeof schedule.id === "string" &&
+    isScheduleCategory(schedule.category) &&
+    typeof schedule.title === "string" &&
+    typeof schedule.dueDate === "string" &&
+    typeof schedule.repeatLabel === "string" &&
+    typeof schedule.note === "string" &&
+    typeof schedule.isDone === "boolean"
   );
 }
 
@@ -101,7 +135,8 @@ function parseStoredState(value: string | null): StoredPetLogState | null {
       parsed.version === 1 &&
       isPetProfile(parsed.profile) &&
       Array.isArray(parsed.records) &&
-      parsed.records.every(isRecordEntry)
+      parsed.records.every(isRecordEntry) &&
+      (parsed.schedules === undefined || (Array.isArray(parsed.schedules) && parsed.schedules.every(isCareSchedule)))
     ) {
       return parsed as StoredPetLogState;
     }
@@ -115,6 +150,7 @@ function parseStoredState(value: string | null): StoredPetLogState | null {
 export function PetLogProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<PetProfile>(initialProfile);
   const [records, setRecords] = useState<RecordEntry[]>(initialRecords);
+  const [schedules, setSchedules] = useState<CareSchedule[]>(initialSchedules);
   const [isStorageReady, setIsStorageReady] = useState(false);
 
   useEffect(() => {
@@ -129,6 +165,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       if (storedState) {
         setProfile(storedState.profile);
         setRecords(storedState.records);
+        setSchedules(storedState.schedules ?? initialSchedules);
       }
       setIsStorageReady(true);
     }, 0);
@@ -145,6 +182,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       version: 1,
       profile,
       records,
+      schedules,
     };
 
     try {
@@ -152,7 +190,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     } catch {
       // 저장소 사용이 막힌 환경에서는 현재 세션 상태만 유지합니다.
     }
-  }, [isStorageReady, profile, records]);
+  }, [isStorageReady, profile, records, schedules]);
 
   const addRecord = useCallback((input: NewRecordInput) => {
     const now = new Date();
@@ -200,9 +238,57 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const addSchedule = useCallback((input: NewScheduleInput) => {
+    const now = new Date();
+    const schedule: CareSchedule = {
+      id: `schedule-${now.getTime()}`,
+      category: input.category,
+      title: input.title.trim(),
+      dueDate: input.dueDate,
+      repeatLabel: input.repeatLabel.trim() || "한 번",
+      note: input.note.trim(),
+      isDone: false,
+    };
+
+    setSchedules((current) => [schedule, ...current]);
+    return schedule;
+  }, []);
+
+  const toggleScheduleDone = useCallback((id: string) => {
+    setSchedules((current) =>
+      current.map((schedule) => (schedule.id === id ? { ...schedule, isDone: !schedule.isDone } : schedule)),
+    );
+  }, []);
+
+  const deleteSchedule = useCallback((id: string) => {
+    setSchedules((current) => current.filter((schedule) => schedule.id !== id));
+  }, []);
+
   const value = useMemo(
-    () => ({ profile, records, addRecord, updateRecord, deleteRecord, updateProfile }),
-    [profile, records, addRecord, updateRecord, deleteRecord, updateProfile],
+    () => ({
+      profile,
+      records,
+      schedules,
+      addRecord,
+      updateRecord,
+      deleteRecord,
+      updateProfile,
+      addSchedule,
+      toggleScheduleDone,
+      deleteSchedule,
+    }),
+    [
+      profile,
+      records,
+      schedules,
+      addRecord,
+      updateRecord,
+      deleteRecord,
+      updateProfile,
+      addSchedule,
+      toggleScheduleDone,
+      deleteSchedule,
+    ],
   );
 
   return <PetLogContext.Provider value={value}>{children}</PetLogContext.Provider>;

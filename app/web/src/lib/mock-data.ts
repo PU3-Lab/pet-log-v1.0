@@ -1,4 +1,13 @@
-import type { CommunityBoard, CommunityPost, MetricSeries, PetProfile, RecordCategory, RecordEntry, Suggestion } from "./types";
+import type {
+  CareSchedule,
+  CommunityBoard,
+  CommunityPost,
+  MetricSeries,
+  PetProfile,
+  RecordCategory,
+  RecordEntry,
+  Suggestion,
+} from "./types";
 
 export const petProfile: PetProfile = {
   name: "코코",
@@ -59,6 +68,36 @@ export const records: RecordEntry[] = [
   },
 ];
 
+export const schedules: CareSchedule[] = [
+  {
+    id: "schedule-vaccine",
+    category: "vaccination",
+    title: "종합백신 접종",
+    dueDate: "2026-05-02",
+    repeatLabel: "매년",
+    note: "최근 컨디션 기록을 함께 확인하기",
+    isDone: false,
+  },
+  {
+    id: "schedule-heartworm",
+    category: "medication",
+    title: "심장사상충 약",
+    dueDate: "2026-05-15",
+    repeatLabel: "매월",
+    note: "저녁 식사 후 복용",
+    isDone: false,
+  },
+  {
+    id: "schedule-grooming",
+    category: "grooming",
+    title: "눈가 미용",
+    dueDate: "2026-05-25",
+    repeatLabel: "필요할 때",
+    note: "눈물 자국 상태 확인",
+    isDone: false,
+  },
+];
+
 export const suggestions: Suggestion[] = [
   {
     id: "s1",
@@ -84,7 +123,7 @@ export const suggestions: Suggestion[] = [
     title: "예방접종 시기 도래",
     detail: "종합백신 접종 시기가 3일 남았습니다. 알림을 확인하고 일정을 잡아보세요.",
     action: "일정 확인",
-    actionHref: "/more",
+    actionHref: "/schedule",
     tone: "blue",
   },
 ];

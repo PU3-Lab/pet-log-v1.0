@@ -39,6 +39,26 @@ export type RecordEntry = {
   structured?: StructuredRecord;
 };
 
+export type ScheduleCategory = "vaccination" | "medication" | "checkup" | "grooming" | "food";
+
+export type ScheduleTone = "green" | "orange" | "red" | "blue";
+
+export type CareSchedule = {
+  id: string;
+  category: ScheduleCategory;
+  title: string;
+  dueDate: string;
+  repeatLabel: string;
+  note: string;
+  isDone: boolean;
+};
+
+export type ScheduleStatus = {
+  label: string;
+  tone: ScheduleTone;
+  dayDiff: number;
+};
+
 export type SuggestionCategory = "행동" | "건강" | "생활";
 
 export type SuggestionTone = "green" | "orange" | "blue";

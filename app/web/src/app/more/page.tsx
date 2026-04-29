@@ -6,6 +6,7 @@ const moreItems = [
   { href: "/profile", label: "반려동물 프로필", detail: "우리 아이 정보를 관리해요" },
   { href: "/suggestions", label: "AI 제안", detail: "맞춤형 행동 개선 가이드" },
   { href: "/timeline", label: "기록 타임라인", detail: "날짜별 기록을 한눈에" },
+  { href: "/schedule", label: "일정", detail: "접종, 약 복용, 검진 리마인더" },
   { href: "/notifications", label: "알림", detail: "중요한 알림을 한눈에" },
   { href: "/more", label: "설정", detail: "앱 설정을 관리해요" },
 ];
