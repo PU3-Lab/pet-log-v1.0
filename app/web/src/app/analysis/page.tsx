@@ -5,7 +5,15 @@ import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, MiniLineChart, Pill, SectionHeader } from "@/components/ui";
 import { getAiInsights } from "@/lib/ai-insights";
-import { getAnalysisMetrics, getAnalysisReport, getVetBrief, type AnalysisMetric, type AnalysisRange, type AnalysisTone } from "@/lib/analysis-summary";
+import {
+  getAnalysisMetrics,
+  getAnalysisReport,
+  getCombinedAnalysisMetric,
+  getVetBrief,
+  type AnalysisMetric,
+  type AnalysisRange,
+  type AnalysisTone,
+} from "@/lib/analysis-summary";
 
 type MetricFilter = "all" | AnalysisMetric["id"];
 
@@ -43,13 +51,14 @@ export default function AnalysisPage() {
   const summary = useMemo(() => getAnalysisReport(records, activeRange), [activeRange, records]);
   const aiInsights = useMemo(() => getAiInsights(records), [records]);
   const metrics = useMemo(() => getAnalysisMetrics(records), [records]);
+  const combinedMetric = useMemo(() => getCombinedAnalysisMetric(records), [records]);
   const vetBrief = useMemo(() => getVetBrief(records), [records]);
   const visibleMetrics = useMemo(() => {
     if (activeMetric === "all") {
-      return metrics;
+      return [combinedMetric];
     }
     return metrics.filter((metric) => metric.id === activeMetric);
-  }, [activeMetric, metrics]);
+  }, [activeMetric, combinedMetric, metrics]);
 
   return (
     <AppShell subtitle="데이터를 분석하고 해석해요" title="분석 리포트">

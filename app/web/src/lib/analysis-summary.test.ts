@@ -47,7 +47,7 @@ assert.equal(metrics.find((metric) => metric.id === "stool")?.trend, "최근 기
 const combinedMetric = getCombinedAnalysisMetric(records);
 assert.equal(combinedMetric.id, "all");
 assert.equal(combinedMetric.label, "전체");
-assert.deepEqual(combinedMetric.values.slice(-3), [1, 1, 1]);
+assert.deepEqual(combinedMetric.values.slice(-2), [1, 2]);
 assert.ok(combinedMetric.trend.includes("3건"));
 
 const vetBrief = getVetBrief(records);

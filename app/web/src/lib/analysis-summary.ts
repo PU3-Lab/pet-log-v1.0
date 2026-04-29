@@ -22,6 +22,10 @@ export type AnalysisMetric = {
   tone: AnalysisTone;
 };
 
+export type CombinedAnalysisMetric = Omit<AnalysisMetric, "id"> & {
+  id: "all";
+};
+
 export type AnalysisReport = {
   period: string;
   title: string;
@@ -78,6 +82,26 @@ export function getAnalysisMetrics(records: RecordEntry[]): AnalysisMetric[] {
   });
 }
 
+export function getCombinedAnalysisMetric(records: RecordEntry[]): CombinedAnalysisMetric {
+  const recentRecords = records.slice(0, 7).reverse();
+  const dateCounts = recentRecords.reduce<Map<string, number>>((counts, record) => {
+    counts.set(record.date, (counts.get(record.date) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+  const values = Array.from(dateCounts.values());
+  const paddedValues = [...Array(Math.max(0, 7 - values.length)).fill(0), ...values];
+  const latest = records[0];
+
+  return {
+    id: "all",
+    label: "전체",
+    unit: "건",
+    values: paddedValues,
+    trend: latest ? `${records.length}건 · 최근 ${latest.time}` : "최근 기록 없음",
+    tone: getCombinedTone(recentRecords),
+  };
+}
+
 export function getVetBrief(records: RecordEntry[]): VetBrief {
   const recentRecords = records.slice(0, 3);
   const hasAlert = records.some((record) => record.status === "alert");
@@ -92,6 +116,18 @@ export function getVetBrief(records: RecordEntry[]): VetBrief {
         ? recentRecords.map((record) => `${record.date} ${record.time} · ${categoryLabels[record.category]} · ${record.title}`)
         : ["아직 제출용으로 정리할 기록이 없습니다."],
   };
+}
+
+function getCombinedTone(records: RecordEntry[]): AnalysisTone {
+  if (records.some((record) => record.status === "alert")) {
+    return "red";
+  }
+
+  if (records.some((record) => record.status === "notice")) {
+    return "orange";
+  }
+
+  return records.length > 0 ? "green" : "blue";
 }
 
 function createReportCard(category: RecordCategory, records: RecordEntry[]): AnalysisCard {
