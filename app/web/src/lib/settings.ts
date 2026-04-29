@@ -1,4 +1,19 @@
-import type { AppSettings, CareNotificationCategory, NotificationPreferences } from "./types";
+import type {
+  AppSettings,
+  CareNotificationCategory,
+  CareSchedule,
+  NotificationPreferences,
+  PetProfile,
+  RecordEntry,
+} from "./types";
+
+type CreatePetLogExportInput = {
+  profile: PetProfile;
+  records: RecordEntry[];
+  schedules: CareSchedule[];
+  settings: AppSettings;
+  exportedAt?: string;
+};
 
 export const defaultNotificationPreferences: NotificationPreferences = {
   missingRecord: true,
@@ -47,5 +62,42 @@ export function getSettingsSummary(settings: AppSettings) {
   return {
     enabledNotificationCount: getEnabledNotificationCategories(settings.notificationPreferences).length,
     aiInsightLabel: settings.aiInsightEnabled ? "AI 요약 켜짐" : "AI 요약 꺼짐",
+  };
+}
+
+export function createPetLogExport({
+  profile,
+  records,
+  schedules,
+  settings,
+  exportedAt = new Date().toISOString(),
+}: CreatePetLogExportInput) {
+  return {
+    appName: "Pet Log",
+    version: 1,
+    exportedAt,
+    summary: {
+      profileName: profile.name,
+      recordCount: records.length,
+      scheduleCount: schedules.length,
+      aiInsightEnabled: settings.aiInsightEnabled,
+    },
+    profile,
+    records,
+    schedules,
+    settings,
+  };
+}
+
+export function getPetLogExportFileName(profile: PetProfile, exportedAt = new Date().toISOString()) {
+  const datePart = exportedAt.slice(0, 10).replaceAll("-", "");
+  const safeName = profile.name.trim().replace(/[^\p{L}\p{N}_-]+/gu, "-") || "pet";
+  return `pet-log-${safeName}-${datePart}.json`;
+}
+
+export function getResetDataSummary(records: RecordEntry[], schedules: CareSchedule[]) {
+  return {
+    title: "저장 데이터 초기화",
+    detail: `기록 ${records.length}개와 일정 ${schedules.length}개를 기본 예시 데이터로 되돌립니다.`,
   };
 }

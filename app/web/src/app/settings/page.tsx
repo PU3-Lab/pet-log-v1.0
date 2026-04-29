@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, SectionHeader } from "@/components/ui";
-import { getSettingsSummary, notificationPreferenceOptions } from "@/lib/settings";
+import {
+  createPetLogExport,
+  getPetLogExportFileName,
+  getResetDataSummary,
+  getSettingsSummary,
+  notificationPreferenceOptions,
+} from "@/lib/settings";
 import type { NotificationPreferences } from "@/lib/types";
 
 const categoryClasses = {
@@ -32,9 +38,12 @@ function ToggleMark({ active }: { active: boolean }) {
 }
 
 export default function SettingsPage() {
-  const { profile, records, schedules, settings, updateSettings } = usePetLog();
+  const { profile, records, schedules, settings, updateSettings, resetPetLogData } = usePetLog();
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState("");
   const summary = useMemo(() => getSettingsSummary(settings), [settings]);
   const activeSchedules = useMemo(() => schedules.filter((schedule) => !schedule.isDone).length, [schedules]);
+  const resetSummary = useMemo(() => getResetDataSummary(records, schedules), [records, schedules]);
 
   function toggleNotificationPreference(key: keyof NotificationPreferences) {
     updateSettings({
@@ -51,6 +60,27 @@ export default function SettingsPage() {
       ...settings,
       aiInsightEnabled: !settings.aiInsightEnabled,
     });
+  }
+
+  function exportData() {
+    const exportedAt = new Date().toISOString();
+    const snapshot = createPetLogExport({ profile, records, schedules, settings, exportedAt });
+    const fileName = getPetLogExportFileName(profile, exportedAt);
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+    setExportStatus(`${fileName} 파일로 준비했습니다.`);
+  }
+
+  function confirmReset() {
+    resetPetLogData();
+    setIsResetConfirmOpen(false);
+    setExportStatus("");
   }
 
   return (
@@ -111,35 +141,87 @@ export default function SettingsPage() {
 
         <section>
           <SectionHeader title="데이터" />
-          <Card>
-            <dl className="space-y-3 text-sm">
-              {[
-                ["프로필", profile.name],
-                ["저장된 기록", `${records.length}개`],
-                ["진행 중 일정", `${activeSchedules}개`],
-              ].map(([label, value]) => (
-                <div className="flex justify-between gap-4 border-b border-[#edf1e9] pb-3 last:border-0 last:pb-0" key={label}>
-                  <dt className="font-bold text-[#778174]">{label}</dt>
-                  <dd className="text-right font-semibold text-[#263022]">{value}</dd>
+          <div className="space-y-3">
+            <Card>
+              <dl className="space-y-3 text-sm">
+                {[
+                  ["프로필", profile.name],
+                  ["저장된 기록", `${records.length}개`],
+                  ["진행 중 일정", `${activeSchedules}개`],
+                ].map(([label, value]) => (
+                  <div className="flex justify-between gap-4 border-b border-[#edf1e9] pb-3 last:border-0 last:pb-0" key={label}>
+                    <dt className="font-bold text-[#778174]">{label}</dt>
+                    <dd className="text-right font-semibold text-[#263022]">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {[
+                  { href: "/profile", label: "프로필" },
+                  { href: "/timeline", label: "기록" },
+                  { href: "/schedule", label: "일정" },
+                ].map((item) => (
+                  <Link
+                    className="grid h-10 place-items-center rounded-xl border border-[#dce7d7] bg-[#f7fbf4] text-sm font-bold text-[#16804b]"
+                    href={item.href}
+                    key={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </Card>
+
+            <div className={settingPanelClass}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-[#1f2922]">데이터 내보내기</p>
+                  <p className="mt-1 text-sm leading-6 text-[#667262]">프로필, 기록, 일정, 설정을 JSON 파일로 저장합니다.</p>
+                  {exportStatus ? <p className="mt-2 text-xs font-bold text-[#16804b]">{exportStatus}</p> : null}
                 </div>
-              ))}
-            </dl>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {[
-                { href: "/profile", label: "프로필" },
-                { href: "/timeline", label: "기록" },
-                { href: "/schedule", label: "일정" },
-              ].map((item) => (
-                <Link
-                  className="grid h-10 place-items-center rounded-xl border border-[#dce7d7] bg-[#f7fbf4] text-sm font-bold text-[#16804b]"
-                  href={item.href}
-                  key={item.href}
+                <button
+                  className="h-10 shrink-0 rounded-xl bg-[#16804b] px-3 text-sm font-black text-white"
+                  onClick={exportData}
+                  type="button"
                 >
-                  {item.label}
-                </Link>
-              ))}
+                  내보내기
+                </button>
+              </div>
             </div>
-          </Card>
+
+            <div className={settingPanelClass}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-[#1f2922]">{resetSummary.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-[#667262]">{resetSummary.detail}</p>
+                </div>
+                <button
+                  className="h-10 shrink-0 rounded-xl border border-[#f0c0b8] bg-[#fff4f2] px-3 text-sm font-black text-[#be4c3c]"
+                  onClick={() => setIsResetConfirmOpen(true)}
+                  type="button"
+                >
+                  초기화
+                </button>
+              </div>
+              {isResetConfirmOpen ? (
+                <div className="mt-4 rounded-xl border border-[#f0c0b8] bg-[#fff8f6] p-3">
+                  <p className="text-sm font-bold leading-6 text-[#5b3934]">현재 브라우저에 저장된 변경사항을 기본 예시 데이터로 되돌립니다.</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      className="h-10 rounded-xl border border-[#dce7d7] bg-white text-sm font-black text-[#667262]"
+                      onClick={() => setIsResetConfirmOpen(false)}
+                      type="button"
+                    >
+                      취소
+                    </button>
+                    <button className="h-10 rounded-xl bg-[#be4c3c] text-sm font-black text-white" onClick={confirmReset} type="button">
+                      되돌리기
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </section>
       </div>
     </AppShell>

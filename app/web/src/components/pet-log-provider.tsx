@@ -42,6 +42,7 @@ type PetLogContextValue = {
   deleteRecord: (id: string) => void;
   updateProfile: (input: PetProfile) => void;
   updateSettings: (input: AppSettings) => void;
+  resetPetLogData: () => void;
   addSchedule: (input: NewScheduleInput) => CareSchedule;
   toggleScheduleDone: (id: string) => void;
   deleteSchedule: (id: string) => void;
@@ -272,6 +273,13 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const resetPetLogData = useCallback(() => {
+    setProfile(initialProfile);
+    setRecords(initialRecords);
+    setSchedules(initialSchedules);
+    setSettings(defaultAppSettings);
+  }, []);
+
   const addSchedule = useCallback((input: NewScheduleInput) => {
     const now = new Date();
     const schedule: CareSchedule = {
@@ -309,6 +317,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       deleteRecord,
       updateProfile,
       updateSettings,
+      resetPetLogData,
       addSchedule,
       toggleScheduleDone,
       deleteSchedule,
@@ -323,6 +332,7 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       deleteRecord,
       updateProfile,
       updateSettings,
+      resetPetLogData,
       addSchedule,
       toggleScheduleDone,
       deleteSchedule,
