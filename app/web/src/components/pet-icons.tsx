@@ -12,10 +12,15 @@ type PetIconProps = {
 		| "plus"
 		| "timeline"
 		| "schedule"
-		| "settings"
-		| "shared"
-		| "hospital"
-		| "shopping";
+			| "settings"
+			| "shared"
+			| "hospital"
+			| "shopping"
+			| "question"
+			| "send"
+			| "close"
+			| "heart"
+			| "syringe";
   className?: string;
 };
 
@@ -34,9 +39,14 @@ const iconPaths: Record<PetIconProps["name"], string> = {
 	schedule: "M7 4v3m10-3v3M5 9h14M6 6h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm4 7 2 2 4-5",
 	settings: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v3m0 12v3M4.9 4.9 7 7m10 10 2.1 2.1M3 12h3m12 0h3M4.9 19.1 7 17m10-10 2.1-2.1",
 	shared: "M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8 2a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 20a5 5 0 0 1 10 0m-1-3a5 5 0 0 1 9 3",
-	hospital: "M12 5v14M5 12h14M6 4h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z",
-	shopping: "M6 8h12l-1 12H7L6 8Zm3 0a3 3 0 0 1 6 0",
-};
+		hospital: "M12 5v14M5 12h14M6 4h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z",
+		shopping: "M6 8h12l-1 12H7L6 8Zm3 0a3 3 0 0 1 6 0",
+		question: "M9.5 9a2.5 2.5 0 1 1 4.4 1.6c-.9.7-1.4 1.1-1.4 2.4M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z",
+		send: "M4 12 20 4l-4 16-4-7-8-1Z",
+		close: "M6 6l12 12M18 6 6 18",
+		heart: "M20.8 8.6c0 5.4-8.8 10.4-8.8 10.4S3.2 14 3.2 8.6A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 8.8 2.6Z",
+		syringe: "M18 3l3 3M11 10l7-7 3 3-7 7M4 20l6-6M6 18l-2 2M9 15l-4-4 6-6 4 4",
+	};
 
 export function PetIcon({ name, className }: PetIconProps) {
   return (

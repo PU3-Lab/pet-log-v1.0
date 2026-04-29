@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { AiMascot, Card, CategoryBadge, SectionHeader } from "@/components/ui";
@@ -32,8 +33,17 @@ const toneCard: Record<HomeSummaryTone, string> = {
   blue: "border-[#d4e0f5] bg-[#f6f9ff]",
 };
 
+const chatbotQuestions: Array<{ icon: "heart" | "bell" | "syringe"; text: string }> = [
+  { icon: "heart", text: "오늘 상태 괜찮아?" },
+  { icon: "bell", text: "주의 알림은 왜 떴어?" },
+  { icon: "syringe", text: "백신 전에 확인할 게 있어?" },
+];
+
 export default function Home() {
   const { profile, records, schedules, settings } = usePetLog();
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [chatbotQuestion, setChatbotQuestion] = useState("");
+  const [chatbotNotice, setChatbotNotice] = useState("");
   const latestRecords = records.slice(0, 3);
   const notifications = getCareNotifications(records, schedules, undefined, settings.notificationPreferences).slice(0, 2);
   const todaySummary = getTodaySummary(records);
@@ -41,6 +51,27 @@ export default function Home() {
   const aiSuggestions = settings.aiInsightEnabled ? getAiCareSuggestions(records) : [];
   const homeSuggestions = settings.aiInsightEnabled ? [...aiSuggestions, ...suggestions].slice(0, 2) : [];
   const pendingSchedules = schedules.filter((schedule) => !schedule.isDone).length;
+
+  function openChatbot() {
+    setIsChatbotOpen(true);
+  }
+
+  function closeChatbot() {
+    setIsChatbotOpen(false);
+  }
+
+  function selectChatbotQuestion(question: string) {
+    setChatbotQuestion(question);
+    setChatbotNotice("답변 기능은 준비 중입니다. 현재는 질문 UI 흐름만 확인할 수 있어요.");
+  }
+
+  function submitChatbotQuestion() {
+    if (!chatbotQuestion.trim()) {
+      setChatbotNotice("궁금한 내용을 입력하거나 추천 질문을 선택해주세요.");
+      return;
+    }
+    setChatbotNotice("답변 기능은 준비 중입니다. 현재는 질문 UI 흐름만 확인할 수 있어요.");
+  }
 
   return (
     <AppShell
@@ -260,6 +291,88 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      {!isChatbotOpen ? (
+        <button
+          aria-haspopup="dialog"
+          className="absolute bottom-24 right-5 z-30 inline-flex h-14 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.32)]"
+          onClick={openChatbot}
+          type="button"
+        >
+          <PetIcon className="h-5 w-5" name="question" />
+          물어보기
+        </button>
+      ) : null}
+
+      {isChatbotOpen ? (
+        <div className="absolute inset-0 z-40 bg-[#1f2922]/45 backdrop-blur-[1px]" onClick={closeChatbot}>
+          <section
+            aria-label="보호자 질문"
+            aria-modal="true"
+            className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white px-5 pb-6 pt-3 shadow-[0_-18px_48px_rgba(31,41,34,0.2)]"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#d4d8d0]" />
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black text-[#1f2922]">무엇이 궁금하세요?</h2>
+                <p className="mt-2 text-sm font-semibold leading-6 text-[#667262]">
+                  {profile.name}의 기록을 참고해서 답변해드려요
+                </p>
+              </div>
+              <button
+                aria-label="물어보기 닫기"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f0f3ed] text-[#5e6859]"
+                onClick={closeChatbot}
+                type="button"
+              >
+                <PetIcon className="h-4 w-4" name="close" />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              {chatbotQuestions.map((question) => (
+                <button
+                  className="flex h-12 w-full items-center gap-3 rounded-full border border-[#dfe6d9] bg-[#fbfdf8] px-4 text-left text-sm font-bold text-[#40513f] shadow-[0_4px_14px_rgba(49,65,44,0.04)]"
+                  key={question.text}
+                  onClick={() => selectChatbotQuestion(question.text)}
+                  type="button"
+                >
+                  <PetIcon className="h-5 w-5 shrink-0 text-[#16804b]" name={question.icon} />
+                  <span className="min-w-0 truncate">{question.text}</span>
+                </button>
+              ))}
+            </div>
+
+            {chatbotNotice ? (
+              <p className="mt-4 rounded-2xl bg-[#edf8ed] px-4 py-3 text-xs font-bold leading-5 text-[#16804b]">{chatbotNotice}</p>
+            ) : null}
+
+            <div className="mt-5 flex items-center gap-2 rounded-full border border-[#dfe6d9] bg-white px-4 py-2 shadow-sm">
+              <input
+                className="h-10 min-w-0 flex-1 bg-transparent text-sm font-semibold text-[#263022] outline-none placeholder:text-[#9aa494]"
+                onChange={(event) => {
+                  setChatbotQuestion(event.target.value);
+                  if (chatbotNotice) {
+                    setChatbotNotice("");
+                  }
+                }}
+                placeholder={`${profile.name}에 대해 궁금한 걸 물어보세요`}
+                value={chatbotQuestion}
+              />
+              <button
+                aria-label="질문 보내기"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#16804b] text-white"
+                onClick={submitChatbotQuestion}
+                type="button"
+              >
+                <PetIcon className="h-5 w-5" name="send" />
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </AppShell>
   );
 }
