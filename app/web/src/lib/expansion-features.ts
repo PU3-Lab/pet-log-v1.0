@@ -29,6 +29,22 @@ export type HospitalConnectSummary = {
   shareNotice: string;
 };
 
+export type MapPosition = {
+  x: number;
+  y: number;
+};
+
+export type NearbyAnimalHospital = {
+  id: string;
+  name: string;
+  distanceLabel: string;
+  etaLabel: string;
+  addressHint: string;
+  openLabel: string;
+  tags: string[];
+  mapPosition: MapPosition;
+};
+
 export type ShoppingRecommendation = {
   id: string;
   category: "사료" | "건강 용품" | "케어 용품" | "생활 용품";
@@ -39,6 +55,49 @@ export type ShoppingRecommendation = {
 };
 
 const roleOptions = ["공동 보호자", "기록 담당", "읽기 전용"];
+
+const nearbyAnimalHospitals: Array<Omit<NearbyAnimalHospital, "distanceLabel"> & { distanceMeters: number }> = [
+  {
+    id: "care-vet",
+    name: "펫로그 케어 동물병원",
+    distanceMeters: 450,
+    etaLabel: "도보 6분",
+    addressHint: "현재 위치 북동쪽",
+    openLabel: "진료 중",
+    tags: ["예방접종", "건강검진"],
+    mapPosition: { x: 66, y: 32 },
+  },
+  {
+    id: "night-vet",
+    name: "24시 마음 동물의료센터",
+    distanceMeters: 980,
+    etaLabel: "차량 5분",
+    addressHint: "큰길 건너편",
+    openLabel: "야간 운영",
+    tags: ["야간 상담", "응급"],
+    mapPosition: { x: 28, y: 58 },
+  },
+  {
+    id: "skin-vet",
+    name: "그린펫 피부치과 클리닉",
+    distanceMeters: 1240,
+    etaLabel: "차량 7분",
+    addressHint: "공원 입구 인근",
+    openLabel: "예약 권장",
+    tags: ["피부", "치과"],
+    mapPosition: { x: 78, y: 70 },
+  },
+  {
+    id: "small-vet",
+    name: "소형견 전문 동물병원",
+    distanceMeters: 1700,
+    etaLabel: "차량 9분",
+    addressHint: "주거 단지 방향",
+    openLabel: "진료 중",
+    tags: ["소형견", "행동 상담"],
+    mapPosition: { x: 42, y: 24 },
+  },
+];
 
 export function getSharedCareSummary(profile: PetProfile, records: RecordEntry[]): SharedCareSummary {
   const latestRecord = records[0];
@@ -95,6 +154,19 @@ export function getHospitalConnectSummary(profile: PetProfile, records: RecordEn
   };
 }
 
+export function getNearbyAnimalHospitals(hasPreciseLocation: boolean): NearbyAnimalHospital[] {
+  return nearbyAnimalHospitals.map((hospital) => ({
+    id: hospital.id,
+    name: hospital.name,
+    distanceLabel: formatHospitalDistance(hospital.distanceMeters, hasPreciseLocation),
+    etaLabel: hospital.etaLabel,
+    addressHint: hospital.addressHint,
+    openLabel: hospital.openLabel,
+    tags: hospital.tags,
+    mapPosition: hospital.mapPosition,
+  }));
+}
+
 export function getShoppingRecommendations(profile: PetProfile, records: RecordEntry[]): ShoppingRecommendation[] {
   const noteText = profile.notes.join(" ");
   const hasChickenNote = noteText.includes("닭고기");
@@ -136,4 +208,9 @@ export function getShoppingRecommendations(profile: PetProfile, records: RecordE
       tone: "green",
     },
   ];
+}
+
+function formatHospitalDistance(distanceMeters: number, hasPreciseLocation: boolean) {
+  const distanceLabel = distanceMeters < 1000 ? `${distanceMeters}m` : `${(distanceMeters / 1000).toFixed(1)}km`;
+  return hasPreciseLocation ? distanceLabel : `예상 ${distanceLabel}`;
 }

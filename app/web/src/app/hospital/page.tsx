@@ -4,12 +4,30 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
-import { getHospitalConnectSummary } from "@/lib/expansion-features";
+import { getHospitalConnectSummary, getNearbyAnimalHospitals } from "@/lib/expansion-features";
+
+type LocationStatus = "idle" | "loading" | "ready" | "blocked";
 
 export default function HospitalPage() {
   const { profile, records } = usePetLog();
   const [symptomMemo, setSymptomMemo] = useState("");
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const summary = useMemo(() => getHospitalConnectSummary(profile, records, symptomMemo), [profile, records, symptomMemo]);
+  const nearbyHospitals = useMemo(() => getNearbyAnimalHospitals(locationStatus === "ready"), [locationStatus]);
+
+  function requestNearbyLocation() {
+    if (!("geolocation" in navigator)) {
+      setLocationStatus("blocked");
+      return;
+    }
+
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      () => setLocationStatus("ready"),
+      () => setLocationStatus("blocked"),
+      { enableHighAccuracy: false, maximumAge: 300000, timeout: 5000 },
+    );
+  }
 
   return (
     <AppShell subtitle="상담 전 기록을 정리해요" title="병원 연계">
@@ -33,6 +51,83 @@ export default function HospitalPage() {
               />
             </label>
             <p className="mt-3 text-xs font-semibold leading-5 text-[#778174]">입력한 메모는 아래 리포트 미리보기에 바로 반영됩니다.</p>
+          </Card>
+        </section>
+
+        <section>
+          <SectionHeader
+            action={
+              <button
+                className="h-9 rounded-full border border-[#d8e3d2] bg-white px-3 text-xs font-bold text-[#16804b] disabled:text-[#9ca697]"
+                disabled={locationStatus === "loading"}
+                onClick={requestNearbyLocation}
+                type="button"
+              >
+                {locationStatus === "loading" ? "확인 중" : locationStatus === "ready" ? "내 위치 적용됨" : "내 위치 찾기"}
+              </button>
+            }
+            title="근처 동물병원"
+          />
+          <Card>
+            <div className="relative h-52 overflow-hidden rounded-2xl border border-[#dce6d4] bg-[#edf4e9]">
+              <div className="absolute left-0 top-1/3 h-px w-full bg-white/80" />
+              <div className="absolute left-0 top-2/3 h-px w-full bg-white/80" />
+              <div className="absolute left-1/3 top-0 h-full w-px bg-white/80" />
+              <div className="absolute left-2/3 top-0 h-full w-px bg-white/80" />
+              <div className="absolute -left-10 top-16 h-16 w-72 rotate-[-18deg] rounded-full bg-[#d8e7d0]" />
+              <div className="absolute -right-12 bottom-10 h-14 w-64 rotate-[28deg] rounded-full bg-[#d7e4f5]" />
+              <div className="absolute left-1/2 top-1/2 z-10 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-4 border-white bg-[#16804b] text-xs font-black text-white shadow-lg">
+                나
+              </div>
+              {nearbyHospitals.map((hospital, index) => (
+                <div
+                  className="absolute z-20 grid h-8 w-8 -translate-x-1/2 -translate-y-full place-items-center rounded-full border-2 border-white bg-[#be4c3c] text-xs font-black text-white shadow-lg"
+                  key={hospital.id}
+                  style={{ left: `${hospital.mapPosition.x}%`, top: `${hospital.mapPosition.y}%` }}
+                  title={hospital.name}
+                >
+                  {index + 1}
+                </div>
+              ))}
+              <div className="absolute bottom-3 left-3 right-3 z-30 rounded-2xl bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
+                <p className="text-xs font-bold text-[#1f2922]">
+                  {locationStatus === "ready"
+                    ? "현재 위치 기준 가까운 병원 후보입니다."
+                    : locationStatus === "blocked"
+                      ? "위치 권한이 없어 예상 거리로 표시합니다."
+                      : "위치 권한을 허용하면 거리 표시를 더 명확히 보여줍니다."}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {nearbyHospitals.map((hospital, index) => (
+                <div className="rounded-2xl border border-[#e0e6da] bg-[#fbfdf8] p-3" key={hospital.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[#16804b]">
+                        {index + 1} · {hospital.distanceLabel} · {hospital.etaLabel}
+                      </p>
+                      <h2 className="mt-1 text-sm font-black text-[#1f2922]">{hospital.name}</h2>
+                      <p className="mt-1 text-xs font-semibold text-[#778174]">
+                        {hospital.addressHint} · {hospital.openLabel}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[#fff2df] px-2.5 py-1 text-xs font-bold text-[#bb721e]">지도</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {hospital.tags.map((tag) => (
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-[#667262]" key={tag}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs font-semibold leading-5 text-[#778174]">
+              현재 병원 위치는 MVP 목업 데이터입니다. 실제 주변 검색과 길찾기는 지도 API 연결 후 제공합니다.
+            </p>
           </Card>
         </section>
 

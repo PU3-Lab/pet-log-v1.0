@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { petProfile, records } from "./mock-data";
-import { getHospitalConnectSummary, getSharedCareSummary, getShoppingRecommendations } from "./expansion-features";
+import { getHospitalConnectSummary, getNearbyAnimalHospitals, getSharedCareSummary, getShoppingRecommendations } from "./expansion-features";
 
 const sharedCare = getSharedCareSummary(petProfile, records);
 assert.equal(sharedCare.members.length, 2);
@@ -13,6 +13,15 @@ assert.equal(hospitalSummary.warningRecords.length, 3);
 assert.ok(hospitalSummary.reportPreview.some((item) => item.includes("말티즈")));
 assert.ok(hospitalSummary.reportPreview.some((item) => item.includes("어제부터 현관 앞에서 오래 기다림")));
 assert.ok(hospitalSummary.shareNotice.includes("전송 API"));
+
+const nearbyHospitals = getNearbyAnimalHospitals(true);
+assert.equal(nearbyHospitals.length, 4);
+assert.equal(nearbyHospitals[0].distanceLabel, "450m");
+assert.ok(nearbyHospitals.every((hospital) => hospital.mapPosition.x >= 0 && hospital.mapPosition.x <= 100));
+assert.ok(nearbyHospitals.some((hospital) => hospital.tags.includes("야간 상담")));
+
+const defaultHospitals = getNearbyAnimalHospitals(false);
+assert.ok(defaultHospitals.every((hospital) => hospital.distanceLabel.includes("예상")));
 
 const shopping = getShoppingRecommendations(petProfile, records);
 assert.equal(shopping.length, 4);
