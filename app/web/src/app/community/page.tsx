@@ -179,8 +179,8 @@ export default function CommunityPage() {
           <div className="space-y-3">
             {visiblePosts.map((post) => (
               <button
-                className={`w-full rounded-2xl border bg-white p-4 text-left shadow-[0_8px_24px_rgba(49,65,44,0.06)] transition ${
-                  selectedPost?.id === post.id ? "border-[#16804b]" : "border-[#e0e6da]"
+                className={`w-full rounded-2xl border bg-white p-4 text-left shadow-[0_10px_28px_rgba(49,65,44,0.1)] transition ${
+                  selectedPost?.id === post.id ? "border-[#16804b]" : "border-[#cdd8c6]"
                 }`}
                 key={post.id}
                 onClick={() => setSelectedPostId(post.id)}
@@ -252,7 +252,7 @@ export default function CommunityPage() {
           <section>
             <SectionHeader title={`댓글 ${selectedDetail.commentItems.length}`} />
             <div className="space-y-3">
-              <div className="rounded-2xl border border-[#e0e6da] bg-white p-3 shadow-[0_8px_24px_rgba(49,65,44,0.06)]">
+              <div className="rounded-2xl border border-[#cdd8c6] bg-white p-3 shadow-[0_10px_28px_rgba(49,65,44,0.1)]">
                 <textarea
                   className="min-h-20 w-full resize-none rounded-xl border border-[#dce7d7] bg-[#fbfdf8] p-3 text-sm font-semibold leading-6 text-[#1f2922] outline-none focus:border-[#16804b]"
                   onChange={(event) => setCommentDraft(event.target.value)}

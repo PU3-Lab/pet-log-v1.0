@@ -88,7 +88,7 @@ export default function Home() {
       title={`${profile.name}의 오늘`}
     >
       <div className="space-y-5">
-        <section className="rounded-2xl border border-[#dfe6d9] bg-white p-4 shadow-[0_8px_24px_rgba(49,65,44,0.05)]">
+        <section className="rounded-2xl border border-[#cdd8c6] bg-white p-4 shadow-[0_10px_28px_rgba(49,65,44,0.1)]">
           <div className="grid grid-cols-[52px_1fr_auto] items-center gap-3">
             <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-[#eaf5e5] text-xl font-black text-[#16804b]">
               {profile.photoDataUrl ? (
