@@ -415,12 +415,12 @@
 
 ### 3. AI 흐름
 
-- 현재 기록 구조화와 분석 제안은 `app/web/src/lib/ai-insights.ts`의 규칙 기반 유틸입니다.
-- 홈 챗봇 응답은 `app/web/src/lib/server/pet-log-ai-service.ts`의 서버 AI service를 경유합니다.
+- 기록 구조화와 홈 챗봇 응답은 `app/web/src/lib/server/pet-log-ai-service.ts`의 서버 AI service를 경유합니다.
+- 분석 제안은 아직 `app/web/src/lib/ai-insights.ts`의 규칙 기반 유틸을 사용합니다.
 - 기본 provider는 mock이며, `PET_LOG_AI_PROVIDER=openai`와 `OPENAI_API_KEY`를 설정하면 서버에서 LLM provider를 호출합니다.
 - LLM 또는 서버 분석으로 바꿀 때도 기록 구조화, 누락 감지, 주의 제안, 안전 문구 원칙은 유지합니다.
 - 신뢰도가 낮은 결과는 사용자 확인 후 저장한다는 UX를 유지합니다.
-- 대화 이력 저장과 기록 구조화 LLM 전환은 다음 AI 서버 스프린트 후보로 분리합니다.
+- 분석 제안 서버화와 계정 기반 AI 이력 저장은 다음 AI/DB 스프린트 후보로 분리합니다.
 
 ### 스프린트 15. 서버 LLM Provider 경계
 
@@ -467,6 +467,22 @@
 
 결과: 대화 이력 저장 경계를 API와 서버 mock store로 분리했습니다. 실제 계정별 대화 영속화, 삭제, 검색은 DB/auth 전환 스프린트에서 처리합니다.
 
+### 스프린트 18. 기록 입력 구조화 LLM 전환
+
+목표: 기록 입력 미리보기와 저장 시 구조화가 클라이언트 규칙 로직이 아니라 서버 AI provider 경계를 통과하도록 바꿉니다.
+
+상태: 완료
+
+- `POST /api/v1/ai/records/structure`를 추가해 저장 전 구조화 미리보기를 axios API 호출로 전환했습니다.
+- `POST /api/v1/records`와 `PATCH /api/v1/records/:id`가 서버 AI service의 구조화 provider 결과를 저장하도록 변경했습니다.
+- 기본 provider는 mock 구조화이며, `PET_LOG_AI_PROVIDER=openai`와 `OPENAI_API_KEY` 설정 시 서버에서 OpenAI Responses API를 axios로 호출할 수 있게 했습니다.
+- provider 호출 실패, 키 누락, 잘못된 응답 형식은 mock 구조화로 fallback합니다.
+- 기록 입력 화면은 API 응답을 기다리는 동안 `AI 확인 중` 상태를 표시하고, 실패 시 기본 분류 안내를 표시합니다.
+
+완료 기준: 프론트는 실제 axios API를 호출하고, mock provider만 제거하면 같은 API 계약으로 실제 LLM 구조화를 사용할 수 있습니다.
+
+결과: 기록 구조화 API 경계와 OpenAI provider 준비를 완료했습니다. DB/auth 저장소 전환 전까지 기록 데이터는 기존 mock store와 `localStorage` fallback 흐름을 유지합니다.
+
 ## 배포 전 점검 체크리스트
 
 - `app/web`에서 `npm run lint`를 실행합니다.
@@ -481,4 +497,4 @@
 
 ## 추천 다음 단계
 
-다음 작업은 기록 입력 구조화 LLM 전환 또는 DB/auth 저장소 전환 설계를 진행하는 것입니다. 반복 일정 자동 갱신은 앱 미접속 상태, 푸시, 시간대, 계정 동기화가 필요하므로 서버 작업 후보로 분리합니다.
+다음 작업은 DB/auth 저장소 전환 설계 또는 분석 제안 서버화를 진행하는 것입니다. 반복 일정 자동 갱신은 앱 미접속 상태, 푸시, 시간대, 계정 동기화가 필요하므로 서버 작업 후보로 분리합니다.

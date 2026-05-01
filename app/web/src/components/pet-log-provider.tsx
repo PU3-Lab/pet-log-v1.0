@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { structureRecord } from "@/lib/ai-insights";
 import {
   createRecord as createRecordApi,
   createSchedule as createScheduleApi,
@@ -9,6 +8,7 @@ import {
   deleteSchedule as deleteScheduleApi,
   getPetLogSnapshot,
   resetPetLogSnapshot,
+  structureRecordPreview,
   updateExpansionState as updateExpansionStateApi,
   updateProfile as updateProfileApi,
   updateReadNotifications,
@@ -21,7 +21,7 @@ import { defaultExpansionState, normalizeExpansionState } from "@/lib/expansion-
 import { petProfile as initialProfile, records as initialRecords, schedules as initialSchedules } from "@/lib/mock-data";
 import { defaultAppSettings } from "@/lib/settings";
 import type { ExpansionState, HospitalState, SharedCareState, ShoppingState } from "@/lib/expansion-state";
-import type { AppSettings, CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
+import type { AppSettings, CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory, StructuredRecord } from "@/lib/types";
 
 type NewRecordInput = {
   category: RecordCategory;
@@ -96,7 +96,19 @@ function createTitle(detail: string) {
   return `${firstLine.slice(0, 24)}...`;
 }
 
-function createLocalRecord(input: NewRecordInput, createdAt = new Date()): RecordEntry {
+function createFallbackStructuredRecord(detail: string, category: RecordCategory): StructuredRecord {
+  const sourceText = detail.trim();
+  return {
+    sourceText,
+    normalizedSummary: createTitle(sourceText),
+    suggestedCategory: category,
+    confidence: 0.4,
+    measurements: [],
+    needsConfirmation: true,
+  };
+}
+
+function createLocalRecord(input: NewRecordInput, structured: StructuredRecord, createdAt = new Date()): RecordEntry {
   const detail = input.detail.trim();
   return {
     id: `local-${createdAt.getTime()}`,
@@ -106,7 +118,7 @@ function createLocalRecord(input: NewRecordInput, createdAt = new Date()): Recor
     title: createTitle(detail),
     detail,
     status: "normal",
-    structured: structureRecord(detail, input.category),
+    structured,
   };
 }
 
@@ -322,16 +334,18 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
   }, [isStorageReady, profile, records, schedules, settings, readNotificationIds, expansionState]);
 
   const addRecord = useCallback(async (input: NewRecordInput) => {
-    const fallbackRecord = createLocalRecord(input);
-    setRecords((current) => [fallbackRecord, ...current]);
-
     try {
       const { record } = await createRecordApi(input);
-      setRecords((current) => current.map((item) => (item.id === fallbackRecord.id ? record : item)));
+      setRecords((current) => [record, ...current]);
       setError("");
       setSyncStatus("synced");
       return record;
     } catch {
+      const fallbackStructured = await structureRecordPreview({ detail: input.detail, fallbackCategory: input.category })
+        .then((response) => response.structured)
+        .catch(() => createFallbackStructuredRecord(input.detail, input.category));
+      const fallbackRecord = createLocalRecord(input, fallbackStructured);
+      setRecords((current) => [fallbackRecord, ...current]);
       setError("API 저장에 실패해 로컬 기록으로 유지했습니다.");
       setSyncStatus("offline");
       return fallbackRecord;
@@ -339,33 +353,16 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateRecord = useCallback(async (id: string, input: UpdateRecordInput) => {
-    const detail = input.detail.trim();
-    const previousRecords = records;
-    setRecords((current) =>
-      current.map((record) =>
-        record.id === id
-          ? {
-              ...record,
-              category: input.category,
-              detail,
-              title: createTitle(detail),
-              structured: structureRecord(detail, input.category),
-            }
-          : record,
-      ),
-    );
-
     try {
       const { record } = await updateRecordApi(id, input);
       setRecords((current) => current.map((item) => (item.id === id ? record : item)));
       setError("");
       setSyncStatus("synced");
     } catch {
-      setRecords(previousRecords);
       setError("API 수정에 실패해 이전 기록으로 되돌렸습니다.");
       setSyncStatus("offline");
     }
-  }, [records]);
+  }, []);
 
   const deleteRecord = useCallback(async (id: string) => {
     const previousRecords = records;

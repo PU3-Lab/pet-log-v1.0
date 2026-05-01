@@ -1,20 +1,31 @@
-import { structureRecord } from "@/lib/ai-insights";
 import { defaultExpansionState, normalizeExpansionState } from "@/lib/expansion-state";
 import { petProfile as initialProfile, records as initialRecords, schedules as initialSchedules } from "@/lib/mock-data";
 import { defaultAppSettings } from "@/lib/settings";
 import type { PetLogSnapshot } from "@/lib/api-client";
-import type { AppSettings, CareSchedule, ChatbotMessage, ChatbotThread, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
+import type {
+  AppSettings,
+  CareSchedule,
+  ChatbotMessage,
+  ChatbotThread,
+  PetProfile,
+  RecordCategory,
+  RecordEntry,
+  ScheduleCategory,
+  StructuredRecord,
+} from "@/lib/types";
 import type { ExpansionState } from "@/lib/expansion-state";
 import type { ChatbotMessageResult } from "./pet-log-ai-service";
 
 type NewRecordInput = {
   category: RecordCategory;
   detail: string;
+  structured: StructuredRecord;
 };
 
 type UpdateRecordInput = {
   category: RecordCategory;
   detail: string;
+  structured: StructuredRecord;
 };
 
 type NewScheduleInput = {
@@ -165,7 +176,7 @@ export function createMockRecord(input: NewRecordInput) {
     title: createTitle(detail),
     detail,
     status: "normal",
-    structured: structureRecord(detail, input.category),
+    structured: input.structured,
   };
 
   snapshot.records = [record, ...snapshot.records];
@@ -185,7 +196,7 @@ export function updateMockRecord(id: string, input: UpdateRecordInput) {
       category: input.category,
       detail,
       title: createTitle(detail),
-      structured: structureRecord(detail, input.category),
+      structured: input.structured,
     };
     return updated;
   });

@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
-import { structureRecord } from "@/lib/ai-insights";
+import { structureRecordPreview } from "@/lib/api-client";
 import { categoryLabels } from "@/lib/mock-data";
 import { getInputModeFeedback, type RecordInputMode } from "@/lib/record-input";
-import type { RecordCategory } from "@/lib/types";
+import type { RecordCategory, StructuredRecord } from "@/lib/types";
 
 const categoryOptions: { label: string; value: RecordCategory }[] = [
   { label: "식사", value: "meal" },
@@ -33,6 +33,25 @@ const inputPlaceholders: Record<RecordInputMode, string> = {
 const defaultDetail = "오늘 아침에 50g 사료 먹고, 간식 조금 줬어. 낮에 산책 20분 했고 밤에 배변 1번 했어.";
 const maxLength = 500;
 
+type AiPreviewResult = {
+  detail: string;
+  category: RecordCategory;
+  structured: StructuredRecord;
+};
+
+function createPendingPreview(detail: string, category: RecordCategory): StructuredRecord {
+  const sourceText = detail.trim();
+  const firstSentence = sourceText.split(/\n|[.!?。]/)[0]?.trim() ?? sourceText;
+  return {
+    sourceText,
+    normalizedSummary: firstSentence ? (firstSentence.length > 38 ? `${firstSentence.slice(0, 38)}...` : firstSentence) : "기록 내용을 입력하면 미리보기가 생성됩니다.",
+    suggestedCategory: category,
+    confidence: 0.4,
+    measurements: [],
+    needsConfirmation: true,
+  };
+}
+
 export default function RecordPage() {
   const { addRecord, records } = usePetLog();
   const [detail, setDetail] = useState(defaultDetail);
@@ -41,12 +60,19 @@ export default function RecordPage() {
   const [error, setError] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [aiPreview, setAiPreview] = useState<AiPreviewResult | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
 
   const preview = records.slice(0, 3);
   const trimmedDetail = detail.trim();
   const isInvalid = trimmedDetail.length < 5 || trimmedDetail.length > maxLength;
-  const aiPreview = useMemo(() => structureRecord(trimmedDetail, category), [category, trimmedDetail]);
-  const confidencePercent = Math.round(aiPreview.confidence * 100);
+  const fallbackPreview = useMemo(() => createPendingPreview(trimmedDetail, category), [category, trimmedDetail]);
+  const activePreview = aiPreview?.detail === trimmedDetail && aiPreview.category === category ? aiPreview.structured : null;
+  const displayPreview = activePreview ?? fallbackPreview;
+  const showPreviewLoading = !!trimmedDetail && isPreviewLoading && !activePreview;
+  const visiblePreviewError = trimmedDetail ? previewError : "";
+  const confidencePercent = Math.round(displayPreview.confidence * 100);
   const modeFeedback = getInputModeFeedback(inputMode);
 
   const previewTitle = useMemo(() => {
@@ -55,6 +81,40 @@ export default function RecordPage() {
     }
     return trimmedDetail.length > 28 ? `${trimmedDetail.slice(0, 28)}...` : trimmedDetail;
   }, [trimmedDetail]);
+
+  useEffect(() => {
+    if (!trimmedDetail) {
+      return;
+    }
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      setIsPreviewLoading(true);
+      structureRecordPreview({ detail: trimmedDetail, fallbackCategory: category })
+        .then((response) => {
+          if (!cancelled) {
+            setAiPreview({ category, detail: trimmedDetail, structured: response.structured });
+            setPreviewError("");
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setAiPreview(null);
+            setPreviewError("AI 미리보기를 불러오지 못해 기본 분류로 표시합니다.");
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setIsPreviewLoading(false);
+          }
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [category, trimmedDetail]);
 
   async function handleSave() {
     if (!trimmedDetail) {
@@ -236,32 +296,33 @@ export default function RecordPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <CategoryBadge category={aiPreview.suggestedCategory} />
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${aiPreview.needsConfirmation ? "bg-[#fff2df] text-[#a4651a]" : "bg-[#e8f5df] text-[#32783c]"}`}>
-                      신뢰도 {confidencePercent}%
+                    <CategoryBadge category={displayPreview.suggestedCategory} />
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${displayPreview.needsConfirmation ? "bg-[#fff2df] text-[#a4651a]" : "bg-[#e8f5df] text-[#32783c]"}`}>
+                      {showPreviewLoading ? "AI 확인 중" : `신뢰도 ${confidencePercent}%`}
                     </span>
                   </div>
-                  <h3 className="mt-2 text-sm font-bold text-[#1f2922]">{aiPreview.normalizedSummary || previewTitle}</h3>
+                  <h3 className="mt-2 text-sm font-bold text-[#1f2922]">{displayPreview.normalizedSummary || previewTitle}</h3>
                   <p className="mt-1 text-xs leading-5 text-[#6c7667]">
-                    {aiPreview.needsConfirmation
+                    {visiblePreviewError ||
+                    (displayPreview.needsConfirmation
                       ? "AI 분류가 애매합니다. 카테고리와 내용을 확인한 뒤 저장해주세요."
-                      : "입력한 내용이 구조화되어 저장됩니다. 필요하면 저장 전 수정할 수 있습니다."}
+                      : "입력한 내용이 구조화되어 저장됩니다. 필요하면 저장 전 수정할 수 있습니다.")}
                   </p>
                 </div>
-                <span className="text-sm font-bold text-[#16804b]">{categoryLabels[aiPreview.suggestedCategory]}</span>
+                <span className="text-sm font-bold text-[#16804b]">{categoryLabels[displayPreview.suggestedCategory]}</span>
               </div>
-              {aiPreview.suggestedCategory !== category ? (
+              {displayPreview.suggestedCategory !== category ? (
                 <button
                   className="mt-3 h-10 w-full rounded-xl border border-[#cfe2cd] bg-[#f4faf2] text-sm font-bold text-[#16804b]"
-                  onClick={() => setCategory(aiPreview.suggestedCategory)}
+                  onClick={() => setCategory(displayPreview.suggestedCategory)}
                   type="button"
                 >
                   AI 추천 분류 적용
                 </button>
               ) : null}
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {aiPreview.measurements.length > 0 ? (
-                  aiPreview.measurements.map((measurement) => (
+                {displayPreview.measurements.length > 0 ? (
+                  displayPreview.measurements.map((measurement) => (
                     <div className="rounded-xl bg-[#f4f7f0] px-3 py-2" key={`${measurement.label}-${measurement.value}`}>
                       <p className="text-[11px] font-bold text-[#7b8576]">{measurement.label}</p>
                       <p className="mt-1 text-sm font-black text-[#1f2922]">{measurement.value}</p>

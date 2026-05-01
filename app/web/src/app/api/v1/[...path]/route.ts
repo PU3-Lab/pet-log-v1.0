@@ -16,7 +16,8 @@ import {
   updateMockSchedule,
   updateMockSettings,
 } from "@/lib/server/mock-pet-log-store";
-import { createPetLogChatbotMessage } from "@/lib/server/pet-log-ai-service";
+import { createPetLogChatbotMessage, createPetLogStructuredRecord } from "@/lib/server/pet-log-ai-service";
+import type { RecordCategory } from "@/lib/types";
 
 type RouteContext = {
   params: Promise<{
@@ -24,12 +25,18 @@ type RouteContext = {
   }>;
 };
 
+const recordCategories: RecordCategory[] = ["meal", "walk", "stool", "medical", "behavior"];
+
 function ok<T>(data: T, status = 200) {
   return NextResponse.json({ ok: true, data }, { status });
 }
 
 function fail(code: string, message: string, status = 400) {
   return NextResponse.json({ ok: false, error: { code, message } }, { status });
+}
+
+function isRecordCategory(value: unknown): value is RecordCategory {
+  return recordCategories.includes(value as RecordCategory);
 }
 
 async function readJson(request: NextRequest) {
@@ -68,10 +75,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   if (path[0] === "records" && path.length === 1) {
-    if (!body || typeof body.detail !== "string" || typeof body.category !== "string") {
+    if (!body || typeof body.detail !== "string" || !isRecordCategory(body.category)) {
       return fail("VALIDATION_ERROR", "기록 카테고리와 내용을 입력해주세요.");
     }
-    return ok({ record: createMockRecord({ category: body.category, detail: body.detail }) }, 201);
+    const structured = await createPetLogStructuredRecord({ fallbackCategory: body.category, detail: body.detail });
+    return ok({ record: createMockRecord({ category: body.category, detail: body.detail, structured }) }, 201);
+  }
+
+  if (path[0] === "ai" && path[1] === "records" && path[2] === "structure" && path.length === 3) {
+    if (!body || typeof body.detail !== "string" || !isRecordCategory(body.fallbackCategory)) {
+      return fail("VALIDATION_ERROR", "구조화할 기록 내용과 기본 카테고리를 입력해주세요.");
+    }
+    const structured = await createPetLogStructuredRecord({ detail: body.detail, fallbackCategory: body.fallbackCategory });
+    return ok({ structured });
   }
 
   if (path[0] === "schedules" && path.length === 1) {
@@ -183,11 +199,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const body = await readJson(request);
 
   if (path[0] === "records" && path[1] && path.length === 2) {
-    if (!body || typeof body.detail !== "string" || typeof body.category !== "string") {
+    if (!body || typeof body.detail !== "string" || !isRecordCategory(body.category)) {
       return fail("VALIDATION_ERROR", "기록 카테고리와 내용을 입력해주세요.");
     }
 
-    const record = updateMockRecord(path[1], { category: body.category, detail: body.detail });
+    const structured = await createPetLogStructuredRecord({ fallbackCategory: body.category, detail: body.detail });
+    const record = updateMockRecord(path[1], { category: body.category, detail: body.detail, structured });
     if (!record) {
       return fail("NOT_FOUND", "수정할 기록을 찾을 수 없습니다.", 404);
     }

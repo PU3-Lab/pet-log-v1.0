@@ -4,7 +4,7 @@
 
 현재 `app/web`은 `PetLogProvider`에서 mock data와 `localStorage`를 직접 관리합니다. API 연동 1차 작업은 백엔드 구현 전에 계약을 먼저 고정해, 이후 provider를 axios 기반 데이터 경계로 바꿀 수 있게 만드는 것입니다.
 
-이번 문서는 **API 계약과 mock API 구현 기준 문서**입니다. 프론트는 실제 axios HTTP 호출을 사용하고, 1차 서버 응답은 Next.js Route Handler의 메모리 mock store에서 제공합니다. 실제 DB, 인증, 파일 업로드, LLM 호출은 후속 스프린트에서 결정합니다.
+이번 문서는 **API 계약과 mock API 구현 기준 문서**입니다. 프론트는 실제 axios HTTP 호출을 사용하고, 1차 서버 응답은 Next.js Route Handler의 메모리 mock store에서 제공합니다. 실제 DB, 인증, 파일 업로드는 후속 스프린트에서 결정합니다. LLM은 서버 provider 경계를 먼저 만들고, 기본 개발 환경에서는 mock 응답을 반환합니다.
 
 ## 현재 프론트 저장 경계
 
@@ -118,6 +118,32 @@ ApiSuccess<{ profile: PetProfile }>
 
 ## 기록 API
 
+### `POST /api/v1/ai/records/structure`
+
+저장 전 자연어 기록을 구조화합니다. 프론트는 이 API를 실제 axios 요청으로 호출하고, provider가 mock인지 실제 LLM인지 알지 않습니다.
+
+요청:
+
+```ts
+type StructureRecordRequest = {
+  detail: string;
+  fallbackCategory: RecordCategory;
+};
+```
+
+응답:
+
+```ts
+ApiSuccess<{ structured: StructuredRecord }>
+```
+
+서버 책임:
+
+- 원문, 정규화 요약, 추천 분류, 신뢰도, 추출 수치, 확인 필요 여부를 반환합니다.
+- 기본 provider는 mock이며 현재 규칙 기반 구조화 계약과 동일한 응답을 반환합니다.
+- `PET_LOG_AI_PROVIDER=openai`와 `OPENAI_API_KEY`가 설정되면 서버에서 OpenAI Responses API를 axios로 호출할 수 있습니다.
+- LLM 호출 실패, 키 누락, 잘못된 응답 형식은 mock 구조화로 fallback합니다.
+
 ### `POST /api/v1/records`
 
 자연어 기록을 생성합니다.
@@ -140,8 +166,8 @@ ApiSuccess<{ record: RecordEntry }>
 서버 책임:
 
 - `id`, `date`, `time`, `title`, `status`를 생성합니다.
-- `structured`는 1차 계약에서는 현재 규칙 기반 구조화 결과와 동일한 형태로 저장할 수 있습니다.
-- LLM 기반 구조화는 후속 AI 스프린트로 분리합니다.
+- `structured`는 `app/web/src/lib/server/pet-log-ai-service.ts`의 구조화 provider 결과를 저장합니다.
+- 프론트는 저장 전 미리보기와 실제 저장 모두 API 경계를 거치므로 나중에 mock provider만 제거할 수 있습니다.
 
 ### `PATCH /api/v1/records/:id`
 
@@ -174,8 +200,8 @@ ApiSuccess<{ deletedId: string }>
 
 프론트 전환 기준:
 
-- 생성, 수정, 삭제는 optimistic update를 기본으로 둡니다.
-- API 실패 시 이전 `records` 상태로 복구하고 화면에 저장 실패 안내를 표시합니다.
+- 생성과 수정은 서버 구조화 결과를 받은 뒤 화면 상태에 반영합니다.
+- API 실패 시 로컬 fallback 기록을 만들거나 이전 `records` 상태를 유지하고 화면에 저장 실패 안내를 표시합니다.
 - 삭제는 기존 confirm 흐름을 유지합니다.
 
 ## 일정 API
@@ -392,8 +418,8 @@ ApiSuccess<{ threads: ChatbotThread[] }>
 - 기본값은 `PET_LOG_AI_PROVIDER=mock`과 같은 mock provider 동작입니다.
 - `PET_LOG_AI_PROVIDER=openai`, `OPENAI_API_KEY`를 설정하면 서버에서 OpenAI Responses API를 호출합니다.
 - `PET_LOG_OPENAI_MODEL`로 모델을 지정할 수 있습니다.
-- OpenAI provider가 실패하거나 키가 없으면 UI가 깨지지 않도록 mock 답변으로 fallback합니다.
-- 프론트 API 계약은 그대로 유지하므로 나중에 Next Route Handler를 별도 백엔드로 옮겨도 `/api/v1/chatbot/messages` 호출 구조는 유지합니다.
+- OpenAI provider가 실패하거나 키가 없으면 UI가 깨지지 않도록 mock 답변 또는 mock 구조화로 fallback합니다.
+- 프론트 API 계약은 그대로 유지하므로 나중에 Next Route Handler를 별도 백엔드로 옮겨도 챗봇과 기록 구조화 호출 구조는 유지합니다.
 
 ## 프론트 전환 순서
 
@@ -405,7 +431,7 @@ ApiSuccess<{ threads: ChatbotThread[] }>
 3. `PetLogProvider`에 `isLoading`, `error`, `syncStatus`를 추가합니다.
 4. 앱 시작 시 `GET /api/v1/me/pet-log`를 호출하고 성공하면 provider 상태를 서버 스냅샷으로 교체합니다.
 5. 기록, 프로필, 일정, 설정 mutation을 API 함수 호출로 감쌉니다.
-6. 실패 시 optimistic update를 되돌리고 사용자에게 저장 실패 메시지를 노출합니다.
+6. 실패 시 로컬 fallback을 적용하거나 이전 상태를 유지하고 사용자에게 저장 실패 메시지를 노출합니다.
 7. API가 준비되기 전에는 기존 `localStorage` 저장을 fallback으로 유지합니다.
 8. API 전용 모드 전환은 인증, 서버 저장, 마이그레이션 검증 후 별도 스프린트에서 처리합니다.
 

@@ -111,6 +111,7 @@ export default function Home() {
       );
       setChatbotThread(response.thread ?? chatbotThread);
       setChatbotNotice("");
+      setChatbotQuestion((current) => (current.trim() === trimmedQuestion ? "" : current));
     } catch {
       setChatbotNotice("답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
     } finally {

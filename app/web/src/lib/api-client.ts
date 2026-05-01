@@ -1,6 +1,16 @@
 import axios, { AxiosError } from "axios";
 import type { ExpansionState } from "./expansion-state";
-import type { AppSettings, CareSchedule, ChatbotMessage, ChatbotThread, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "./types";
+import type {
+  AppSettings,
+  CareSchedule,
+  ChatbotMessage,
+  ChatbotThread,
+  PetProfile,
+  RecordCategory,
+  RecordEntry,
+  ScheduleCategory,
+  StructuredRecord,
+} from "./types";
 
 export type ApiSuccess<T> = {
   ok: true;
@@ -35,6 +45,11 @@ export type NewRecordInput = {
 export type UpdateRecordInput = {
   category: RecordCategory;
   detail: string;
+};
+
+export type StructureRecordInput = {
+  detail: string;
+  fallbackCategory: RecordCategory;
 };
 
 export type NewScheduleInput = {
@@ -128,6 +143,10 @@ export function updateProfile(input: PetProfile) {
 
 export function createRecord(input: NewRecordInput) {
   return requestData<{ record: RecordEntry }>(apiClient.post("/records", input));
+}
+
+export function structureRecordPreview(input: StructureRecordInput) {
+  return requestData<{ structured: StructuredRecord }>(apiClient.post("/ai/records/structure", input));
 }
 
 export function updateRecord(id: string, input: UpdateRecordInput) {
