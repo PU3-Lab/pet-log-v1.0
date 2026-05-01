@@ -173,6 +173,20 @@ export default function Home() {
           </Card>
         ) : null}
 
+        {!isChatbotOpen ? (
+          <div className="flex justify-end min-[361px]:hidden">
+            <button
+              aria-haspopup="dialog"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.24)]"
+              onClick={openChatbot}
+              type="button"
+            >
+              <PetIcon className="h-5 w-5" name="question" />
+              물어보기
+            </button>
+          </div>
+        ) : null}
+
         <section>
           <SectionHeader
             action={
@@ -311,7 +325,7 @@ export default function Home() {
       {!isChatbotOpen ? (
         <button
           aria-haspopup="dialog"
-          className="absolute bottom-24 right-5 z-30 inline-flex h-14 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.32)]"
+          className="absolute bottom-20 right-5 z-30 hidden h-14 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.32)] min-[361px]:inline-flex"
           onClick={openChatbot}
           type="button"
         >
