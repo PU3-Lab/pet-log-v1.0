@@ -40,6 +40,7 @@ export default function RecordPage() {
   const [inputMode, setInputMode] = useState<RecordInputMode>("text");
   const [error, setError] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const preview = records.slice(0, 3);
   const trimmedDetail = detail.trim();
@@ -55,7 +56,7 @@ export default function RecordPage() {
     return trimmedDetail.length > 28 ? `${trimmedDetail.slice(0, 28)}...` : trimmedDetail;
   }, [trimmedDetail]);
 
-  function handleSave() {
+  async function handleSave() {
     if (!trimmedDetail) {
       setError("기록 내용을 입력해주세요.");
       setSavedId(null);
@@ -74,23 +75,29 @@ export default function RecordPage() {
       return;
     }
 
-    const record = addRecord({ category, detail: trimmedDetail });
-    setSavedId(record.id);
-    setError("");
-    setDetail("");
+    setIsSaving(true);
+    try {
+      const record = await addRecord({ category, detail: trimmedDetail });
+      setSavedId(record.id);
+      setError("");
+      setDetail("");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
     <AppShell
       bottomAction={
         <button
-          className={`h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] ${
+          className={`h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] disabled:bg-[#8ab99f] ${
             isInvalid ? "bg-[#8ab99f]" : "bg-[#16804b]"
           }`}
+          disabled={isSaving}
           onClick={handleSave}
           type="button"
         >
-          기록 저장하기
+          {isSaving ? "저장 중" : "기록 저장하기"}
         </button>
       }
       subtitle="자연어로 쉽고 빠르게 기록"

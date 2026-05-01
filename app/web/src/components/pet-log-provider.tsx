@@ -2,6 +2,21 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { structureRecord } from "@/lib/ai-insights";
+import {
+  createRecord as createRecordApi,
+  createSchedule as createScheduleApi,
+  deleteRecord as deleteRecordApi,
+  deleteSchedule as deleteScheduleApi,
+  getPetLogSnapshot,
+  resetPetLogSnapshot,
+  updateExpansionState as updateExpansionStateApi,
+  updateProfile as updateProfileApi,
+  updateReadNotifications,
+  updateRecord as updateRecordApi,
+  updateSchedule as updateScheduleApi,
+  updateSettings as updateSettingsApi,
+  type PetLogSnapshot,
+} from "@/lib/api-client";
 import { defaultExpansionState, normalizeExpansionState } from "@/lib/expansion-state";
 import { petProfile as initialProfile, records as initialRecords, schedules as initialSchedules } from "@/lib/mock-data";
 import { defaultAppSettings } from "@/lib/settings";
@@ -43,20 +58,23 @@ type PetLogContextValue = {
   settings: AppSettings;
   readNotificationIds: string[];
   expansionState: ExpansionState;
-  addRecord: (input: NewRecordInput) => RecordEntry;
-  updateRecord: (id: string, input: UpdateRecordInput) => void;
-  deleteRecord: (id: string) => void;
-  updateProfile: (input: PetProfile) => void;
-  updateSettings: (input: AppSettings) => void;
-  updateSharedCareState: (input: Partial<SharedCareState>) => void;
-  updateHospitalState: (input: Partial<HospitalState>) => void;
-  updateShoppingState: (input: Partial<ShoppingState>) => void;
-  resetPetLogData: () => void;
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: (ids: string[]) => void;
-  addSchedule: (input: NewScheduleInput) => CareSchedule;
-  toggleScheduleDone: (id: string) => void;
-  deleteSchedule: (id: string) => void;
+  isLoading: boolean;
+  error: string;
+  syncStatus: "idle" | "synced" | "offline" | "error";
+  addRecord: (input: NewRecordInput) => Promise<RecordEntry>;
+  updateRecord: (id: string, input: UpdateRecordInput) => Promise<void>;
+  deleteRecord: (id: string) => Promise<void>;
+  updateProfile: (input: PetProfile) => Promise<PetProfile>;
+  updateSettings: (input: AppSettings) => Promise<void>;
+  updateSharedCareState: (input: Partial<SharedCareState>) => Promise<void>;
+  updateHospitalState: (input: Partial<HospitalState>) => Promise<void>;
+  updateShoppingState: (input: Partial<ShoppingState>) => Promise<void>;
+  resetPetLogData: () => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllNotificationsRead: (ids: string[]) => Promise<void>;
+  addSchedule: (input: NewScheduleInput) => Promise<CareSchedule>;
+  toggleScheduleDone: (id: string) => Promise<void>;
+  deleteSchedule: (id: string) => Promise<void>;
 };
 
 const storageKey = "pet-log-state-v1";
@@ -76,6 +94,32 @@ function createTitle(detail: string) {
     return firstLine || "새 기록";
   }
   return `${firstLine.slice(0, 24)}...`;
+}
+
+function createLocalRecord(input: NewRecordInput, createdAt = new Date()): RecordEntry {
+  const detail = input.detail.trim();
+  return {
+    id: `local-${createdAt.getTime()}`,
+    date: formatDateLabel(createdAt),
+    time: formatTimeLabel(createdAt),
+    category: input.category,
+    title: createTitle(detail),
+    detail,
+    status: "normal",
+    structured: structureRecord(detail, input.category),
+  };
+}
+
+function createLocalSchedule(input: NewScheduleInput, createdAt = new Date()): CareSchedule {
+  return {
+    id: `schedule-${createdAt.getTime()}`,
+    category: input.category,
+    title: input.title.trim(),
+    dueDate: input.dueDate,
+    repeatLabel: input.repeatLabel.trim() || "한 번",
+    note: input.note.trim(),
+    isDone: false,
+  };
 }
 
 function isRecordCategory(value: unknown): value is RecordCategory {
@@ -192,9 +236,24 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [expansionState, setExpansionState] = useState<ExpansionState>(defaultExpansionState);
   const [isStorageReady, setIsStorageReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [syncStatus, setSyncStatus] = useState<"idle" | "synced" | "offline" | "error">("idle");
+
+  const applySnapshot = useCallback((snapshot: PetLogSnapshot) => {
+    setProfile(snapshot.profile);
+    setRecords(snapshot.records);
+    setSchedules(snapshot.schedules);
+    setSettings(snapshot.settings);
+    setReadNotificationIds(snapshot.readNotificationIds);
+    setExpansionState(normalizeExpansionState(snapshot.expansionState));
+  }, []);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
+    let cancelled = false;
+
+    async function loadInitialState() {
+      setIsLoading(true);
       let storedState: StoredPetLogState | null = null;
       try {
         storedState = parseStoredState(window.localStorage.getItem(storageKey));
@@ -210,11 +269,35 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
         setReadNotificationIds(storedState.readNotificationIds ?? []);
         setExpansionState(storedState.expansionState ?? defaultExpansionState);
       }
-      setIsStorageReady(true);
-    }, 0);
 
-    return () => window.clearTimeout(timeoutId);
-  }, []);
+      try {
+        const snapshot = await getPetLogSnapshot();
+        if (cancelled) {
+          return;
+        }
+        applySnapshot(snapshot);
+        setError("");
+        setSyncStatus("synced");
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        setError("API 연결에 실패해 로컬 데모 상태를 사용합니다.");
+        setSyncStatus("offline");
+      } finally {
+        if (!cancelled) {
+          setIsStorageReady(true);
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applySnapshot]);
 
   useEffect(() => {
     if (!isStorageReady) {
@@ -238,25 +321,26 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
     }
   }, [isStorageReady, profile, records, schedules, settings, readNotificationIds, expansionState]);
 
-  const addRecord = useCallback((input: NewRecordInput) => {
-    const now = new Date();
-    const record: RecordEntry = {
-      id: `local-${now.getTime()}`,
-      date: formatDateLabel(now),
-      time: formatTimeLabel(now),
-      category: input.category,
-      title: createTitle(input.detail),
-      detail: input.detail.trim(),
-      status: "normal",
-      structured: structureRecord(input.detail, input.category),
-    };
+  const addRecord = useCallback(async (input: NewRecordInput) => {
+    const fallbackRecord = createLocalRecord(input);
+    setRecords((current) => [fallbackRecord, ...current]);
 
-    setRecords((current) => [record, ...current]);
-    return record;
+    try {
+      const { record } = await createRecordApi(input);
+      setRecords((current) => current.map((item) => (item.id === fallbackRecord.id ? record : item)));
+      setError("");
+      setSyncStatus("synced");
+      return record;
+    } catch {
+      setError("API 저장에 실패해 로컬 기록으로 유지했습니다.");
+      setSyncStatus("offline");
+      return fallbackRecord;
+    }
   }, []);
 
-  const updateRecord = useCallback((id: string, input: UpdateRecordInput) => {
+  const updateRecord = useCallback(async (id: string, input: UpdateRecordInput) => {
     const detail = input.detail.trim();
+    const previousRecords = records;
     setRecords((current) =>
       current.map((record) =>
         record.id === id
@@ -270,103 +354,228 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
           : record,
       ),
     );
-  }, []);
 
-  const deleteRecord = useCallback((id: string) => {
+    try {
+      const { record } = await updateRecordApi(id, input);
+      setRecords((current) => current.map((item) => (item.id === id ? record : item)));
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setRecords(previousRecords);
+      setError("API 수정에 실패해 이전 기록으로 되돌렸습니다.");
+      setSyncStatus("offline");
+    }
+  }, [records]);
+
+  const deleteRecord = useCallback(async (id: string) => {
+    const previousRecords = records;
     setRecords((current) => current.filter((record) => record.id !== id));
-  }, []);
 
-  const updateProfile = useCallback((input: PetProfile) => {
-    setProfile({
+    try {
+      await deleteRecordApi(id);
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setRecords(previousRecords);
+      setError("API 삭제에 실패해 이전 기록으로 되돌렸습니다.");
+      setSyncStatus("offline");
+    }
+  }, [records]);
+
+  const updateProfile = useCallback(async (input: PetProfile) => {
+    const nextProfile = {
       ...input,
       notes: input.notes.map((note) => note.trim()).filter(Boolean),
       photoDataUrl: input.photoDataUrl || undefined,
-    });
-  }, []);
+    };
+    const previousProfile = profile;
+    setProfile(nextProfile);
 
-  const updateSettings = useCallback((input: AppSettings) => {
-    setSettings({
+    try {
+      const { profile } = await updateProfileApi(nextProfile);
+      setProfile(profile);
+      setError("");
+      setSyncStatus("synced");
+      return profile;
+    } catch {
+      setProfile(previousProfile);
+      setError("API 프로필 저장에 실패했습니다.");
+      setSyncStatus("offline");
+      return previousProfile;
+    }
+  }, [profile]);
+
+  const updateSettings = useCallback(async (input: AppSettings) => {
+    const nextSettings = {
       notificationPreferences: {
         missingRecord: input.notificationPreferences.missingRecord,
         alert: input.notificationPreferences.alert,
         schedule: input.notificationPreferences.schedule,
       },
       aiInsightEnabled: input.aiInsightEnabled,
-    });
-  }, []);
-
-  const updateSharedCareState = useCallback((input: Partial<SharedCareState>) => {
-    setExpansionState((current) => ({
-      ...current,
-      sharedCare: {
-        ...current.sharedCare,
-        ...input,
-      },
-    }));
-  }, []);
-
-  const updateHospitalState = useCallback((input: Partial<HospitalState>) => {
-    setExpansionState((current) => ({
-      ...current,
-      hospital: {
-        ...current.hospital,
-        ...input,
-      },
-    }));
-  }, []);
-
-  const updateShoppingState = useCallback((input: Partial<ShoppingState>) => {
-    setExpansionState((current) => ({
-      ...current,
-      shopping: {
-        ...current.shopping,
-        ...input,
-      },
-    }));
-  }, []);
-
-  const resetPetLogData = useCallback(() => {
-    setProfile(initialProfile);
-    setRecords(initialRecords);
-    setSchedules(initialSchedules);
-    setSettings(defaultAppSettings);
-    setReadNotificationIds([]);
-    setExpansionState(defaultExpansionState);
-  }, []);
-
-  const markNotificationRead = useCallback((id: string) => {
-    setReadNotificationIds((current) => (current.includes(id) ? current : [...current, id]));
-  }, []);
-
-  const markAllNotificationsRead = useCallback((ids: string[]) => {
-    setReadNotificationIds((current) => Array.from(new Set([...current, ...ids])));
-  }, []);
-
-  const addSchedule = useCallback((input: NewScheduleInput) => {
-    const now = new Date();
-    const schedule: CareSchedule = {
-      id: `schedule-${now.getTime()}`,
-      category: input.category,
-      title: input.title.trim(),
-      dueDate: input.dueDate,
-      repeatLabel: input.repeatLabel.trim() || "한 번",
-      note: input.note.trim(),
-      isDone: false,
     };
+    const previousSettings = settings;
+    setSettings(nextSettings);
 
-    setSchedules((current) => [schedule, ...current]);
-    return schedule;
+    try {
+      const { settings } = await updateSettingsApi(nextSettings);
+      setSettings(settings);
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setSettings(previousSettings);
+      setError("API 설정 저장에 실패했습니다.");
+      setSyncStatus("offline");
+    }
+  }, [settings]);
+
+  const persistExpansionState = useCallback(async (nextState: ExpansionState, previousState: ExpansionState) => {
+    try {
+      const { expansionState } = await updateExpansionStateApi(nextState);
+      setExpansionState(expansionState);
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setExpansionState(previousState);
+      setError("API 확장 상태 저장에 실패했습니다.");
+      setSyncStatus("offline");
+    }
   }, []);
 
-  const toggleScheduleDone = useCallback((id: string) => {
-    setSchedules((current) =>
-      current.map((schedule) => (schedule.id === id ? { ...schedule, isDone: !schedule.isDone } : schedule)),
-    );
+  const updateSharedCareState = useCallback(async (input: Partial<SharedCareState>) => {
+    const previousState = expansionState;
+    const nextState = normalizeExpansionState({
+      ...expansionState,
+      sharedCare: {
+        ...expansionState.sharedCare,
+        ...input,
+      },
+    });
+    setExpansionState(nextState);
+    await persistExpansionState(nextState, previousState);
+  }, [expansionState, persistExpansionState]);
+
+  const updateHospitalState = useCallback(async (input: Partial<HospitalState>) => {
+    const previousState = expansionState;
+    const nextState = normalizeExpansionState({
+      ...expansionState,
+      hospital: {
+        ...expansionState.hospital,
+        ...input,
+      },
+    });
+    setExpansionState(nextState);
+    await persistExpansionState(nextState, previousState);
+  }, [expansionState, persistExpansionState]);
+
+  const updateShoppingState = useCallback(async (input: Partial<ShoppingState>) => {
+    const previousState = expansionState;
+    const nextState = normalizeExpansionState({
+      ...expansionState,
+      shopping: {
+        ...expansionState.shopping,
+        ...input,
+      },
+    });
+    setExpansionState(nextState);
+    await persistExpansionState(nextState, previousState);
+  }, [expansionState, persistExpansionState]);
+
+  const resetPetLogData = useCallback(async () => {
+    try {
+      const snapshot = await resetPetLogSnapshot();
+      applySnapshot(snapshot);
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setProfile(initialProfile);
+      setRecords(initialRecords);
+      setSchedules(initialSchedules);
+      setSettings(defaultAppSettings);
+      setReadNotificationIds([]);
+      setExpansionState(defaultExpansionState);
+      setError("API 초기화에 실패해 로컬 예시 데이터로 되돌렸습니다.");
+      setSyncStatus("offline");
+    }
+  }, [applySnapshot]);
+
+  const persistReadNotificationIds = useCallback(async (ids: string[]) => {
+    try {
+      const response = await updateReadNotifications(ids);
+      setReadNotificationIds(response.readNotificationIds);
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setError("API 알림 읽음 저장에 실패했습니다.");
+      setSyncStatus("offline");
+    }
   }, []);
 
-  const deleteSchedule = useCallback((id: string) => {
+  const markNotificationRead = useCallback(async (id: string) => {
+    const nextIds = readNotificationIds.includes(id) ? readNotificationIds : [...readNotificationIds, id];
+    setReadNotificationIds(nextIds);
+    await persistReadNotificationIds(nextIds);
+  }, [persistReadNotificationIds, readNotificationIds]);
+
+  const markAllNotificationsRead = useCallback(async (ids: string[]) => {
+    const nextIds = Array.from(new Set([...readNotificationIds, ...ids]));
+    setReadNotificationIds(nextIds);
+    await persistReadNotificationIds(nextIds);
+  }, [persistReadNotificationIds, readNotificationIds]);
+
+  const addSchedule = useCallback(async (input: NewScheduleInput) => {
+    const fallbackSchedule = createLocalSchedule(input);
+    setSchedules((current) => [fallbackSchedule, ...current]);
+
+    try {
+      const { schedule } = await createScheduleApi(input);
+      setSchedules((current) => current.map((item) => (item.id === fallbackSchedule.id ? schedule : item)));
+      setError("");
+      setSyncStatus("synced");
+      return schedule;
+    } catch {
+      setError("API 일정 저장에 실패해 로컬 일정으로 유지했습니다.");
+      setSyncStatus("offline");
+      return fallbackSchedule;
+    }
+  }, []);
+
+  const toggleScheduleDone = useCallback(async (id: string) => {
+    const targetSchedule = schedules.find((schedule) => schedule.id === id);
+    if (!targetSchedule) {
+      return;
+    }
+
+    const previousSchedules = schedules;
+    const nextDone = !targetSchedule.isDone;
+    setSchedules((current) => current.map((schedule) => (schedule.id === id ? { ...schedule, isDone: nextDone } : schedule)));
+
+    try {
+      const { schedule } = await updateScheduleApi(id, { isDone: nextDone });
+      setSchedules((current) => current.map((item) => (item.id === id ? schedule : item)));
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setSchedules(previousSchedules);
+      setError("API 일정 수정에 실패했습니다.");
+      setSyncStatus("offline");
+    }
+  }, [schedules]);
+
+  const deleteSchedule = useCallback(async (id: string) => {
+    const previousSchedules = schedules;
     setSchedules((current) => current.filter((schedule) => schedule.id !== id));
-  }, []);
+
+    try {
+      await deleteScheduleApi(id);
+      setError("");
+      setSyncStatus("synced");
+    } catch {
+      setSchedules(previousSchedules);
+      setError("API 일정 삭제에 실패했습니다.");
+      setSyncStatus("offline");
+    }
+  }, [schedules]);
 
   const value = useMemo(
     () => ({
@@ -376,6 +585,9 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       settings,
       readNotificationIds,
       expansionState,
+      isLoading,
+      error,
+      syncStatus,
       addRecord,
       updateRecord,
       deleteRecord,
@@ -398,6 +610,9 @@ export function PetLogProvider({ children }: { children: ReactNode }) {
       settings,
       readNotificationIds,
       expansionState,
+      isLoading,
+      error,
+      syncStatus,
       addRecord,
       updateRecord,
       deleteRecord,

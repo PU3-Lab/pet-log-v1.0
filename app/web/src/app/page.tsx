@@ -11,6 +11,7 @@ import { getRecentChange, getRecordStatusLabel, getTodaySummary, type HomeSummar
 import { getCareNotifications } from "@/lib/notifications";
 import { suggestions, todos } from "@/lib/mock-data";
 import { PetIcon } from "@/components/pet-icons";
+import { sendChatbotMessage } from "@/lib/api-client";
 
 const toneText: Record<HomeSummaryTone, string> = {
   green: "text-[#16804b]",
@@ -44,6 +45,7 @@ export default function Home() {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [chatbotQuestion, setChatbotQuestion] = useState("");
   const [chatbotNotice, setChatbotNotice] = useState("");
+  const [isChatbotSending, setIsChatbotSending] = useState(false);
   const latestRecords = records.slice(0, 3);
   const notifications = getCareNotifications(records, schedules, undefined, settings.notificationPreferences).slice(0, 2);
   const todaySummary = getTodaySummary(records);
@@ -60,17 +62,31 @@ export default function Home() {
     setIsChatbotOpen(false);
   }
 
-  function selectChatbotQuestion(question: string) {
-    setChatbotQuestion(question);
-    setChatbotNotice("답변 기능은 준비 중입니다. 현재는 질문 UI 흐름만 확인할 수 있어요.");
-  }
-
-  function submitChatbotQuestion() {
-    if (!chatbotQuestion.trim()) {
+  async function askChatbot(question: string) {
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion) {
       setChatbotNotice("궁금한 내용을 입력하거나 추천 질문을 선택해주세요.");
       return;
     }
-    setChatbotNotice("답변 기능은 준비 중입니다. 현재는 질문 UI 흐름만 확인할 수 있어요.");
+
+    setIsChatbotSending(true);
+    try {
+      const response = await sendChatbotMessage(trimmedQuestion, latestRecords.map((record) => record.id));
+      setChatbotNotice(`${response.answer} ${response.safetyNotice}`);
+    } catch {
+      setChatbotNotice("답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setIsChatbotSending(false);
+    }
+  }
+
+  function selectChatbotQuestion(question: string) {
+    setChatbotQuestion(question);
+    void askChatbot(question);
+  }
+
+  function submitChatbotQuestion() {
+    void askChatbot(chatbotQuestion);
   }
 
   return (
@@ -305,11 +321,11 @@ export default function Home() {
       ) : null}
 
       {isChatbotOpen ? (
-        <div className="absolute inset-0 z-40 bg-[#1f2922]/45 backdrop-blur-[1px]" onClick={closeChatbot}>
+        <div className="absolute inset-x-0 bottom-[76px] top-0 z-40 bg-[#1f2922]/45 backdrop-blur-[1px]" onClick={closeChatbot}>
           <section
             aria-label="보호자 질문"
             aria-modal="true"
-            className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white px-5 pb-6 pt-3 shadow-[0_-18px_48px_rgba(31,41,34,0.2)]"
+            className="absolute bottom-0 left-0 right-0 max-h-[min(74vh,520px)] overflow-y-auto rounded-t-[28px] bg-white px-5 pb-6 pt-3 shadow-[0_-18px_48px_rgba(31,41,34,0.2)]"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
           >
@@ -335,6 +351,7 @@ export default function Home() {
               {chatbotQuestions.map((question) => (
                 <button
                   className="flex h-12 w-full items-center gap-3 rounded-full border border-[#dfe6d9] bg-[#fbfdf8] px-4 text-left text-sm font-bold text-[#40513f] shadow-[0_4px_14px_rgba(49,65,44,0.04)]"
+                  disabled={isChatbotSending}
                   key={question.text}
                   onClick={() => selectChatbotQuestion(question.text)}
                   type="button"
@@ -363,7 +380,8 @@ export default function Home() {
               />
               <button
                 aria-label="질문 보내기"
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#16804b] text-white"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#16804b] text-white disabled:bg-[#8ab99f]"
+                disabled={isChatbotSending}
                 onClick={submitChatbotQuestion}
                 type="button"
               >

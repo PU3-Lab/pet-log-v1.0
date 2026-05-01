@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const [draft, setDraft] = useState<PetProfile>(profile);
   const [notesText, setNotesText] = useState(profile.notes.join("\n"));
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -191,7 +192,7 @@ export default function ProfilePage() {
     stopCamera();
   }
 
-  function saveProfile() {
+  async function saveProfile() {
     const nextProfile: PetProfile = {
       ...emptyProfile,
       ...draft,
@@ -213,12 +214,17 @@ export default function ProfilePage() {
       return;
     }
 
-    updateProfile(nextProfile);
-    setDraft(nextProfile);
-    setNotesText(nextProfile.notes.join("\n"));
-    setError("");
-    stopCamera();
-    setIsEditing(false);
+    setIsSaving(true);
+    try {
+      const savedProfile = await updateProfile(nextProfile);
+      setDraft(savedProfile);
+      setNotesText(savedProfile.notes.join("\n"));
+      setError("");
+      stopCamera();
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -363,11 +369,12 @@ export default function ProfilePage() {
               </label>
               {error ? <p className="text-sm font-semibold text-[#be4c3c]">{error}</p> : null}
               <button
-                className="h-12 w-full rounded-2xl bg-[#16804b] text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)]"
+                className="h-12 w-full rounded-2xl bg-[#16804b] text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] disabled:bg-[#8ab99f]"
+                disabled={isSaving}
                 onClick={saveProfile}
                 type="button"
               >
-                프로필 저장
+                {isSaving ? "저장 중" : "프로필 저장"}
               </button>
             </div>
           </Card>
