@@ -325,48 +325,50 @@ export default function Home() {
           <section
             aria-label="보호자 질문"
             aria-modal="true"
-            className="absolute bottom-0 left-0 right-0 max-h-[min(74vh,520px)] overflow-y-auto rounded-t-[28px] bg-white px-5 pb-6 pt-3 shadow-[0_-18px_48px_rgba(31,41,34,0.2)]"
+            className="absolute bottom-0 left-0 right-0 flex max-h-[min(74vh,520px)] flex-col rounded-t-[28px] bg-white px-5 pb-5 pt-3 shadow-[0_-18px_48px_rgba(31,41,34,0.2)]"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
           >
-            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#d4d8d0]" />
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-black text-[#1f2922]">무엇이 궁금하세요?</h2>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#667262]">
-                  {profile.name}의 기록을 참고해서 답변해드려요
-                </p>
-              </div>
-              <button
-                aria-label="물어보기 닫기"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f0f3ed] text-[#5e6859]"
-                onClick={closeChatbot}
-                type="button"
-              >
-                <PetIcon className="h-4 w-4" name="close" />
-              </button>
-            </div>
-
-            <div className="mt-5 space-y-2">
-              {chatbotQuestions.map((question) => (
+            <div className="min-h-0 overflow-y-auto pb-3">
+              <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#d4d8d0]" />
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-black text-[#1f2922]">무엇이 궁금하세요?</h2>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-[#667262]">
+                    {profile.name}의 기록을 참고해서 답변해드려요
+                  </p>
+                </div>
                 <button
-                  className="flex h-12 w-full items-center gap-3 rounded-full border border-[#dfe6d9] bg-[#fbfdf8] px-4 text-left text-sm font-bold text-[#40513f] shadow-[0_4px_14px_rgba(49,65,44,0.04)]"
-                  disabled={isChatbotSending}
-                  key={question.text}
-                  onClick={() => selectChatbotQuestion(question.text)}
+                  aria-label="물어보기 닫기"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f0f3ed] text-[#5e6859]"
+                  onClick={closeChatbot}
                   type="button"
                 >
-                  <PetIcon className="h-5 w-5 shrink-0 text-[#16804b]" name={question.icon} />
-                  <span className="min-w-0 truncate">{question.text}</span>
+                  <PetIcon className="h-4 w-4" name="close" />
                 </button>
-              ))}
+              </div>
+
+              <div className="mt-5 space-y-2">
+                {chatbotQuestions.map((question) => (
+                  <button
+                    className="flex h-12 w-full items-center gap-3 rounded-full border border-[#dfe6d9] bg-[#fbfdf8] px-4 text-left text-sm font-bold text-[#40513f] shadow-[0_4px_14px_rgba(49,65,44,0.04)]"
+                    disabled={isChatbotSending}
+                    key={question.text}
+                    onClick={() => selectChatbotQuestion(question.text)}
+                    type="button"
+                  >
+                    <PetIcon className="h-5 w-5 shrink-0 text-[#16804b]" name={question.icon} />
+                    <span className="min-w-0 truncate">{question.text}</span>
+                  </button>
+                ))}
+              </div>
+
+              {chatbotNotice ? (
+                <p className="mt-4 rounded-2xl bg-[#edf8ed] px-4 py-3 text-xs font-bold leading-5 text-[#16804b]">{chatbotNotice}</p>
+              ) : null}
             </div>
 
-            {chatbotNotice ? (
-              <p className="mt-4 rounded-2xl bg-[#edf8ed] px-4 py-3 text-xs font-bold leading-5 text-[#16804b]">{chatbotNotice}</p>
-            ) : null}
-
-            <div className="mt-5 flex items-center gap-2 rounded-full border border-[#dfe6d9] bg-white px-4 py-2 shadow-sm">
+            <div className="flex shrink-0 items-center gap-2 rounded-full border border-[#dfe6d9] bg-white px-4 py-2 shadow-sm">
               <input
                 className="h-10 min-w-0 flex-1 bg-transparent text-sm font-semibold text-[#263022] outline-none placeholder:text-[#9aa494]"
                 onChange={(event) => {
