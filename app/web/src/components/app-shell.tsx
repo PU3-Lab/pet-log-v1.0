@@ -31,8 +31,8 @@ export function AppShell({ title, subtitle, action, bottomAction, children }: Ap
   const showBackButton = pathname !== "/";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#eef6e9_0,#f7f8f4_38%,#f2f3ee_100%)] text-[#20231f]">
-      <div className="relative mx-auto flex h-screen w-full max-w-[430px] flex-col overflow-hidden bg-[#f8faf5] shadow-[0_24px_80px_rgba(58,75,49,0.18)] md:my-6 md:h-[880px] md:rounded-[28px] md:border md:border-[#dce3d4]">
+    <main className="min-h-dvh bg-[radial-gradient(circle_at_top,#eef6e9_0,#f7f8f4_38%,#f2f3ee_100%)] text-[#20231f]">
+      <div className="relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-[#f8faf5] shadow-[0_24px_80px_rgba(58,75,49,0.18)] md:my-6 md:h-[880px] md:rounded-[28px] md:border md:border-[#dce3d4]">
         <header className="z-20 shrink-0 border-b border-[#e0e6da] bg-[#f8faf5]/95 px-5 pb-4 pt-5 backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
