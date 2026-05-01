@@ -92,8 +92,8 @@ export default function AnalysisPage() {
 
         <section>
           <SectionHeader title="변화 추이" />
-          <div className="mb-3 grid grid-cols-5 gap-2">
-            <Pill active={activeMetric === "all"} className="w-full px-2 text-xs" onClick={() => setActiveMetric("all")}>
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            <Pill active={activeMetric === "all"} className="col-span-2 w-full px-2 text-xs" onClick={() => setActiveMetric("all")}>
               전체
             </Pill>
             {metrics.map((metric) => (
