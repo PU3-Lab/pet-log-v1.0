@@ -14,6 +14,39 @@ import { PetIcon } from "@/components/pet-icons";
 import { getChatbotThreads, sendChatbotMessage } from "@/lib/api-client";
 import type { ChatbotThread } from "@/lib/types";
 
+type SpeechRecognitionEventLike = {
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+};
+
+type SpeechRecognitionErrorLike = {
+  error?: string;
+};
+
+type PetLogSpeechRecognition = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onend: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorLike) => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  start: () => void;
+};
+
+type PetLogSpeechRecognitionConstructor = new () => PetLogSpeechRecognition;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: PetLogSpeechRecognitionConstructor;
+    webkitSpeechRecognition?: PetLogSpeechRecognitionConstructor;
+  }
+}
+
 const toneText: Record<HomeSummaryTone, string> = {
   green: "text-[#16804b]",
   orange: "text-[#a4651a]",
@@ -48,6 +81,7 @@ export default function Home() {
   const [chatbotNotice, setChatbotNotice] = useState("");
   const [isChatbotSending, setIsChatbotSending] = useState(false);
   const [isChatbotHistoryLoading, setIsChatbotHistoryLoading] = useState(false);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [chatbotThread, setChatbotThread] = useState<ChatbotThread | null>(null);
   const chatbotScrollRef = useRef<HTMLDivElement | null>(null);
   const latestRecords = records.slice(0, 3);
@@ -126,6 +160,44 @@ export default function Home() {
 
   function submitChatbotQuestion() {
     void askChatbot(chatbotQuestion);
+  }
+
+  function startChatbotVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setChatbotNotice("이 브라우저에서는 음성 입력을 지원하지 않습니다.");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "ko-KR";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.onresult = (event) => {
+        const transcript = event.results[0]?.[0]?.transcript.trim();
+        if (!transcript) {
+          return;
+        }
+        setChatbotQuestion((current) => {
+          const trimmedCurrent = current.trim();
+          return trimmedCurrent ? `${trimmedCurrent} ${transcript}` : transcript;
+        });
+        setChatbotNotice("");
+      };
+      recognition.onerror = (event) => {
+        const message = event.error === "not-allowed" ? "마이크 권한을 허용해야 음성 입력을 사용할 수 있습니다." : "음성을 인식하지 못했습니다. 다시 시도해주세요.";
+        setChatbotNotice(message);
+      };
+      recognition.onend = () => {
+        setIsVoiceListening(false);
+      };
+      setIsVoiceListening(true);
+      recognition.start();
+    } catch {
+      setIsVoiceListening(false);
+      setChatbotNotice("음성 입력을 시작하지 못했습니다. 다시 시도해주세요.");
+    }
   }
 
   return (
@@ -457,6 +529,20 @@ export default function Home() {
                 placeholder={`${profile.name}에 대해 궁금한 걸 물어보세요`}
                 value={chatbotQuestion}
               />
+              <button
+                aria-label={isVoiceListening ? "음성 입력 듣는 중" : "음성 입력 시작"}
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border ${
+                  isVoiceListening
+                    ? "border-[#16804b] bg-[#e7f4eb] text-[#16804b]"
+                    : "border-[#d8e2d2] bg-[#f6f8f3] text-[#667262] disabled:text-[#a9b2a5]"
+                }`}
+                disabled={isChatbotSending || isVoiceListening}
+                onClick={startChatbotVoiceInput}
+                title="음성 입력"
+                type="button"
+              >
+                <PetIcon className="h-5 w-5" name="mic" />
+              </button>
               <button
                 aria-label="질문 보내기"
                 className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#16804b] text-white disabled:bg-[#8ab99f]"

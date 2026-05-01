@@ -18,6 +18,7 @@ type PetIconProps = {
 			| "shopping"
 			| "question"
 			| "send"
+			| "mic"
 			| "close"
 			| "heart"
 			| "syringe";
@@ -43,6 +44,7 @@ const iconPaths: Record<PetIconProps["name"], string> = {
 		shopping: "M6 8h12l-1 12H7L6 8Zm3 0a3 3 0 0 1 6 0",
 		question: "M9.5 9a2.5 2.5 0 1 1 4.4 1.6c-.9.7-1.4 1.1-1.4 2.4M12 17h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z",
 		send: "M4 12 20 4l-4 16-4-7-8-1Z",
+		mic: "M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0M12 19v3m-4 0h8",
 		close: "M6 6l12 12M18 6 6 18",
 		heart: "M20.8 8.6c0 5.4-8.8 10.4-8.8 10.4S3.2 14 3.2 8.6A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 8.8 2.6Z",
 		syringe: "M18 3l3 3M11 10l7-7 3 3-7 7M4 20l6-6M6 18l-2 2M9 15l-4-4 6-6 4 4",
