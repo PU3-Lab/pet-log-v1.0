@@ -206,21 +206,3 @@ export function updateMockExpansionState(input: Partial<ExpansionState>) {
   });
   return clone(snapshot.expansionState);
 }
-
-export function createMockChatbotMessage(question: string, contextRecordIds: string[] = []) {
-  const trimmedQuestion = question.trim();
-  const referencedRecords =
-    contextRecordIds.length > 0
-      ? snapshot.records.filter((record) => contextRecordIds.includes(record.id)).slice(0, 3)
-      : snapshot.records.slice(0, 3);
-  const latestRecord = referencedRecords[0];
-  const recordHint = latestRecord
-    ? `최근 "${latestRecord.title}" 기록을 함께 봤습니다.`
-    : "아직 참고할 최근 기록이 많지 않습니다.";
-
-  return {
-    answer: `${trimmedQuestion || "질문"}에 대해 확인했어요. ${recordHint} 지금 단계에서는 기록을 이어서 남기고 변화가 반복되는지 보는 것이 좋습니다.`,
-    referencedRecordIds: referencedRecords.map((record) => record.id),
-    safetyNotice: "이 답변은 저장된 기록 기반 참고 안내이며 진단이 아닙니다. 증상이 지속되거나 심해지면 병원 상담을 권장합니다.",
-  };
-}

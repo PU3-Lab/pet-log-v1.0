@@ -415,10 +415,27 @@
 
 ### 3. AI 흐름
 
-- 현재 AI는 `app/web/src/lib/ai-insights.ts`의 규칙 기반 유틸입니다.
+- 현재 기록 구조화와 분석 제안은 `app/web/src/lib/ai-insights.ts`의 규칙 기반 유틸입니다.
+- 홈 챗봇 응답은 `app/web/src/lib/server/pet-log-ai-service.ts`의 서버 AI service를 경유합니다.
+- 기본 provider는 mock이며, `PET_LOG_AI_PROVIDER=openai`와 `OPENAI_API_KEY`를 설정하면 서버에서 LLM provider를 호출합니다.
 - LLM 또는 서버 분석으로 바꿀 때도 기록 구조화, 누락 감지, 주의 제안, 안전 문구 원칙은 유지합니다.
 - 신뢰도가 낮은 결과는 사용자 확인 후 저장한다는 UX를 유지합니다.
-- 홈 챗봇 UI는 현재 목업이며, 실제 답변 생성과 대화 저장은 LLM/API 연결 시 별도 상태와 서버 경계로 분리합니다.
+- 대화 이력 저장과 기록 구조화 LLM 전환은 다음 AI 서버 스프린트 후보로 분리합니다.
+
+### 스프린트 15. 서버 LLM Provider 경계
+
+목표: 홈 챗봇의 LLM 실행 위치를 서버로 고정하고, mock 응답과 실제 LLM provider를 교체 가능한 구조로 분리합니다.
+
+상태: 완료
+
+- `app/web/src/lib/server/pet-log-ai-service.ts`를 추가해 AI provider 선택, OpenAI 호출, mock fallback, 안전 문구를 한 곳에 둡니다.
+- `POST /api/v1/chatbot/messages`는 mock store가 아니라 서버 AI service를 경유합니다.
+- 기본 개발 환경은 mock provider를 사용하고, 환경변수 설정 시 서버에서 OpenAI Responses API를 호출합니다.
+- `_workspace/03_ai_agent_spec.md`에 AI 책임, 비목표, 안전 규칙, 테스트 시나리오를 기록합니다.
+
+완료 기준: 프론트 호출 계약은 유지하면서 LLM 실행 위치가 서버로 고정되고, 환경변수만으로 mock provider와 실제 LLM provider를 전환할 수 있습니다.
+
+결과: 홈 챗봇 API가 서버 AI service를 경유하도록 변경했고, provider 장애 시 mock 답변으로 fallback해 UI가 깨지지 않도록 했습니다. `lint`, `typecheck`, `git diff --check`를 통과했습니다.
 
 ## 배포 전 점검 체크리스트
 

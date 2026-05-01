@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  createMockChatbotMessage,
   createMockRecord,
   createMockSchedule,
   deleteMockRecord,
@@ -14,6 +13,7 @@ import {
   updateMockSchedule,
   updateMockSettings,
 } from "@/lib/server/mock-pet-log-store";
+import { createPetLogChatbotMessage } from "@/lib/server/pet-log-ai-service";
 
 type RouteContext = {
   params: Promise<{
@@ -89,7 +89,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (!body || typeof body.question !== "string") {
       return fail("VALIDATION_ERROR", "질문을 입력해주세요.");
     }
-    return ok(createMockChatbotMessage(body.question, Array.isArray(body.contextRecordIds) ? body.contextRecordIds : []));
+    const message = await createPetLogChatbotMessage({
+      question: body.question,
+      contextRecordIds: Array.isArray(body.contextRecordIds) ? body.contextRecordIds : [],
+      snapshot: getMockPetLogSnapshot(),
+    });
+    return ok(message);
   }
 
   return fail("NOT_FOUND", "요청한 API를 찾을 수 없습니다.", 404);

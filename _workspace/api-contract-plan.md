@@ -337,10 +337,19 @@ ApiSuccess<ChatbotMessageResponse>
 
 정책:
 
-- 1차 구현 전까지 현재 UI는 준비 중 안내 문구를 유지합니다.
+- 현재 UI는 실제 `/api/v1/chatbot/messages` HTTP 요청을 보내고 서버 AI service 응답을 표시합니다.
 - 답변은 진단이 아니라 저장된 기록 기반 참고 안내로 제한합니다.
 - 응급, 지속 증상, 상태 악화 가능성이 있는 경우 병원 상담 권장 문구를 포함합니다.
 - 대화 이력 저장은 후속 `GET /api/v1/chatbot/threads` 및 `POST /api/v1/chatbot/threads/:id/messages` 후보로 분리합니다.
+
+## 서버 AI Provider 경계
+
+- LLM은 클라이언트에서 직접 실행하지 않고 `app/web/src/lib/server/pet-log-ai-service.ts`에서 실행합니다.
+- 기본값은 `PET_LOG_AI_PROVIDER=mock`과 같은 mock provider 동작입니다.
+- `PET_LOG_AI_PROVIDER=openai`, `OPENAI_API_KEY`를 설정하면 서버에서 OpenAI Responses API를 호출합니다.
+- `PET_LOG_OPENAI_MODEL`로 모델을 지정할 수 있습니다.
+- OpenAI provider가 실패하거나 키가 없으면 UI가 깨지지 않도록 mock 답변으로 fallback합니다.
+- 프론트 API 계약은 그대로 유지하므로 나중에 Next Route Handler를 별도 백엔드로 옮겨도 `/api/v1/chatbot/messages` 호출 구조는 유지합니다.
 
 ## 프론트 전환 순서
 
