@@ -328,6 +328,7 @@ type ChatbotMessageResponse = {
   answer: string;
   referencedRecordIds: string[];
   safetyNotice: string;
+  threadId?: string;
 };
 ```
 
@@ -338,9 +339,52 @@ ApiSuccess<ChatbotMessageResponse>
 정책:
 
 - 현재 UI는 실제 `/api/v1/chatbot/messages` HTTP 요청을 보내고 서버 AI service 응답을 표시합니다.
+- 이 endpoint는 기존 홈 UI 호환용이며, 응답을 서버 mock 대화방에 함께 저장합니다.
 - 답변은 진단이 아니라 저장된 기록 기반 참고 안내로 제한합니다.
 - 응급, 지속 증상, 상태 악화 가능성이 있는 경우 병원 상담 권장 문구를 포함합니다.
-- 대화 이력 저장은 후속 `GET /api/v1/chatbot/threads` 및 `POST /api/v1/chatbot/threads/:id/messages` 후보로 분리합니다.
+
+### `GET /api/v1/chatbot/threads`
+
+홈 챗봇의 최근 대화방과 메시지 이력을 조회합니다.
+
+응답:
+
+```ts
+type ChatbotThread = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatbotMessage[];
+};
+
+type ChatbotMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+  referencedRecordIds?: string[];
+  safetyNotice?: string;
+};
+```
+
+```ts
+ApiSuccess<{ threads: ChatbotThread[] }>
+```
+
+### `POST /api/v1/chatbot/threads`
+
+새 챗봇 대화방을 만듭니다. 제목을 보내지 않으면 `새 질문`을 기본값으로 사용합니다.
+
+### `POST /api/v1/chatbot/threads/:id/messages`
+
+지정한 대화방에 보호자 질문과 AI 답변을 저장합니다.
+
+정책:
+
+- 1차 구현은 Next.js Route Handler의 서버 메모리 mock store에 저장합니다.
+- 실제 계정 기반 대화 이력, 장기 보관, 삭제, 검색은 DB/auth 전환 스프린트에서 처리합니다.
+- assistant 메시지는 답변 본문과 안전 안내를 분리해 저장합니다.
 
 ## 서버 AI Provider 경계
 

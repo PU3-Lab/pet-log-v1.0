@@ -88,6 +88,25 @@ export type AppSettings = {
   aiInsightEnabled: boolean;
 };
 
+export type ChatbotMessageRole = "user" | "assistant";
+
+export type ChatbotMessage = {
+  id: string;
+  role: ChatbotMessageRole;
+  content: string;
+  createdAt: string;
+  referencedRecordIds?: string[];
+  safetyNotice?: string;
+};
+
+export type ChatbotThread = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatbotMessage[];
+};
+
 export type CareNotification = {
   id: string;
   category: CareNotificationCategory;

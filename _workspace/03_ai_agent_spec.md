@@ -8,7 +8,8 @@ Pet Log AI는 보호자가 남긴 기록을 해석해 다음 행동을 정리하
 
 - LLM 호출은 클라이언트가 아니라 서버 API 뒤에서 실행합니다.
 - 현재 실행 지점은 `app/web/src/lib/server/pet-log-ai-service.ts`입니다.
-- 프론트는 계속 `POST /api/v1/chatbot/messages`만 호출하고, provider가 mock인지 실제 LLM인지 알지 않습니다.
+- 프론트는 `POST /api/v1/chatbot/messages` 또는 `POST /api/v1/chatbot/threads/:id/messages`를 호출하고, provider가 mock인지 실제 LLM인지 알지 않습니다.
+- 챗봇 대화 이력은 `GET /api/v1/chatbot/threads`로 조회하며, 1차 구현은 서버 메모리 mock store에 저장합니다.
 - 기본 provider는 `mock`입니다.
 - `PET_LOG_AI_PROVIDER=openai`와 `OPENAI_API_KEY`를 설정하면 서버에서 OpenAI Responses API를 호출할 수 있습니다.
 - `PET_LOG_OPENAI_MODEL`로 모델을 바꿀 수 있고, 기본값은 `gpt-4o-mini`입니다.
@@ -19,6 +20,7 @@ Pet Log AI는 보호자가 남긴 기록을 해석해 다음 행동을 정리하
 - 최근 기록에서 식사, 활동, 배변, 행동, 병원/약/접종 관련 변화를 요약합니다.
 - 기록이 비어 있거나 반복 이상이 보이면 설명 가능한 알림과 제안을 만듭니다.
 - 홈 챗봇은 보호자 질문에 최근 기록을 참고해 짧은 한국어 답변을 제공합니다.
+- 홈 챗봇은 보호자 질문과 AI 답변을 대화방 메시지로 남겨 보호자가 같은 흐름을 이어볼 수 있게 합니다.
 
 ## 비목표
 
@@ -73,3 +75,4 @@ MVP 분류는 식사, 산책/활동, 배변/소변, 병원/약/접종, 행동입
 - 주의 기록이 있을 때 병원 상담 권장 문구가 포함되는지 확인합니다.
 - `PET_LOG_AI_PROVIDER`가 설정되지 않아도 mock 답변이 정상 반환되는지 확인합니다.
 - `PET_LOG_AI_PROVIDER=openai`에서 키가 없거나 호출이 실패해도 UI가 깨지지 않는지 확인합니다.
+- 챗봇 질문 후 `GET /api/v1/chatbot/threads`에서 사용자 메시지와 assistant 메시지가 함께 조회되는지 확인합니다.

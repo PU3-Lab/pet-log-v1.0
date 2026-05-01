@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import type { ExpansionState } from "./expansion-state";
-import type { AppSettings, CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "./types";
+import type { AppSettings, CareSchedule, ChatbotMessage, ChatbotThread, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "./types";
 
 export type ApiSuccess<T> = {
   ok: true;
@@ -55,6 +55,19 @@ export type UpdateScheduleInput = Partial<{
 }>;
 
 export type ChatbotMessageResponse = {
+  answer: string;
+  referencedRecordIds: string[];
+  safetyNotice: string;
+  threadId?: string;
+  thread?: ChatbotThread;
+  userMessage?: ChatbotMessage;
+  assistantMessage?: ChatbotMessage;
+};
+
+export type ChatbotThreadMessageResponse = {
+  thread: ChatbotThread;
+  userMessage: ChatbotMessage;
+  assistantMessage: ChatbotMessage;
   answer: string;
   referencedRecordIds: string[];
   safetyNotice: string;
@@ -149,6 +162,18 @@ export function updateExpansionState(input: Partial<ExpansionState>) {
   return requestData<{ expansionState: ExpansionState }>(apiClient.put("/expansion-state", input));
 }
 
-export function sendChatbotMessage(question: string, contextRecordIds?: string[]) {
-  return requestData<ChatbotMessageResponse>(apiClient.post("/chatbot/messages", { question, contextRecordIds }));
+export function getChatbotThreads() {
+  return requestData<{ threads: ChatbotThread[] }>(apiClient.get("/chatbot/threads"));
+}
+
+export function createChatbotThread(title?: string) {
+  return requestData<{ thread: ChatbotThread }>(apiClient.post("/chatbot/threads", { title }));
+}
+
+export function sendChatbotThreadMessage(threadId: string, question: string, contextRecordIds?: string[]) {
+  return requestData<ChatbotThreadMessageResponse>(apiClient.post(`/chatbot/threads/${threadId}/messages`, { question, contextRecordIds }));
+}
+
+export function sendChatbotMessage(question: string, contextRecordIds?: string[], threadId?: string) {
+  return requestData<ChatbotMessageResponse>(apiClient.post("/chatbot/messages", { question, contextRecordIds, threadId }));
 }

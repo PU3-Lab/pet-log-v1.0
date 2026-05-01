@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { usePetLog } from "@/components/pet-log-provider";
 import { AiMascot, Card, CategoryBadge, SectionHeader } from "@/components/ui";
@@ -11,7 +11,8 @@ import { getRecentChange, getRecordStatusLabel, getTodaySummary, type HomeSummar
 import { getCareNotifications } from "@/lib/notifications";
 import { suggestions, todos } from "@/lib/mock-data";
 import { PetIcon } from "@/components/pet-icons";
-import { sendChatbotMessage } from "@/lib/api-client";
+import { getChatbotThreads, sendChatbotMessage } from "@/lib/api-client";
+import type { ChatbotThread } from "@/lib/types";
 
 const toneText: Record<HomeSummaryTone, string> = {
   green: "text-[#16804b]",
@@ -46,6 +47,9 @@ export default function Home() {
   const [chatbotQuestion, setChatbotQuestion] = useState("");
   const [chatbotNotice, setChatbotNotice] = useState("");
   const [isChatbotSending, setIsChatbotSending] = useState(false);
+  const [isChatbotHistoryLoading, setIsChatbotHistoryLoading] = useState(false);
+  const [chatbotThread, setChatbotThread] = useState<ChatbotThread | null>(null);
+  const chatbotScrollRef = useRef<HTMLDivElement | null>(null);
   const latestRecords = records.slice(0, 3);
   const notifications = getCareNotifications(records, schedules, undefined, settings.notificationPreferences).slice(0, 2);
   const todaySummary = getTodaySummary(records);
@@ -53,9 +57,38 @@ export default function Home() {
   const aiSuggestions = settings.aiInsightEnabled ? getAiCareSuggestions(records) : [];
   const homeSuggestions = settings.aiInsightEnabled ? [...aiSuggestions, ...suggestions].slice(0, 2) : [];
   const pendingSchedules = schedules.filter((schedule) => !schedule.isDone).length;
+  const chatbotMessageCount = chatbotThread?.messages.length ?? 0;
+
+  useEffect(() => {
+    if (!isChatbotOpen) {
+      return;
+    }
+
+    const frameId = requestAnimationFrame(() => {
+      const scrollContainer = chatbotScrollRef.current;
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [chatbotMessageCount, chatbotNotice, isChatbotHistoryLoading, isChatbotOpen]);
+
+  async function loadChatbotHistory() {
+    setIsChatbotHistoryLoading(true);
+    try {
+      const response = await getChatbotThreads();
+      setChatbotThread(response.threads[0] ?? null);
+    } catch {
+      setChatbotNotice("최근 대화를 불러오지 못했습니다.");
+    } finally {
+      setIsChatbotHistoryLoading(false);
+    }
+  }
 
   function openChatbot() {
     setIsChatbotOpen(true);
+    void loadChatbotHistory();
   }
 
   function closeChatbot() {
@@ -71,8 +104,13 @@ export default function Home() {
 
     setIsChatbotSending(true);
     try {
-      const response = await sendChatbotMessage(trimmedQuestion, latestRecords.map((record) => record.id));
-      setChatbotNotice(`${response.answer} ${response.safetyNotice}`);
+      const response = await sendChatbotMessage(
+        trimmedQuestion,
+        latestRecords.map((record) => record.id),
+        chatbotThread?.id,
+      );
+      setChatbotThread(response.thread ?? chatbotThread);
+      setChatbotNotice("");
     } catch {
       setChatbotNotice("답변을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
@@ -343,7 +381,7 @@ export default function Home() {
             onClick={(event) => event.stopPropagation()}
             role="dialog"
           >
-            <div className="min-h-0 overflow-y-auto pb-3">
+            <div className="min-h-0 overflow-y-auto pb-3" ref={chatbotScrollRef}>
               <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#d4d8d0]" />
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -376,6 +414,30 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+
+              {isChatbotHistoryLoading ? (
+                <p className="mt-4 rounded-2xl bg-[#f4f7f0] px-4 py-3 text-xs font-bold leading-5 text-[#667262]">최근 대화를 불러오는 중입니다.</p>
+              ) : null}
+
+              {chatbotThread && chatbotThread.messages.length > 0 ? (
+                <div className="mt-4 space-y-2" aria-label="최근 대화">
+                  {chatbotThread.messages.slice(-8).map((message) => (
+                    <div
+                      className={`max-w-[92%] rounded-2xl px-4 py-3 text-sm font-semibold leading-6 shadow-sm ${
+                        message.role === "user"
+                          ? "ml-auto bg-[#16804b] text-white"
+                          : "mr-auto border border-[#dfe8d9] bg-[#fbfdf8] text-[#334032]"
+                      }`}
+                      key={message.id}
+                    >
+                      <p className="break-words">{message.content}</p>
+                      {message.role === "assistant" && message.safetyNotice ? (
+                        <p className="mt-2 border-t border-[#dfe8d9] pt-2 text-[11px] font-bold leading-5 text-[#667262]">{message.safetyNotice}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {chatbotNotice ? (
                 <p className="mt-4 rounded-2xl bg-[#edf8ed] px-4 py-3 text-xs font-bold leading-5 text-[#16804b]">{chatbotNotice}</p>

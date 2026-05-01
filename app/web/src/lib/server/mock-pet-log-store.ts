@@ -3,8 +3,9 @@ import { defaultExpansionState, normalizeExpansionState } from "@/lib/expansion-
 import { petProfile as initialProfile, records as initialRecords, schedules as initialSchedules } from "@/lib/mock-data";
 import { defaultAppSettings } from "@/lib/settings";
 import type { PetLogSnapshot } from "@/lib/api-client";
-import type { AppSettings, CareSchedule, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
+import type { AppSettings, CareSchedule, ChatbotMessage, ChatbotThread, PetProfile, RecordCategory, RecordEntry, ScheduleCategory } from "@/lib/types";
 import type { ExpansionState } from "@/lib/expansion-state";
+import type { ChatbotMessageResult } from "./pet-log-ai-service";
 
 type NewRecordInput = {
   category: RecordCategory;
@@ -66,6 +67,7 @@ function createInitialSnapshot(): PetLogSnapshot {
 }
 
 let snapshot = createInitialSnapshot();
+let chatbotThreads: ChatbotThread[] = [];
 
 export function getMockPetLogSnapshot() {
   return clone(snapshot);
@@ -73,7 +75,74 @@ export function getMockPetLogSnapshot() {
 
 export function resetMockPetLogSnapshot() {
   snapshot = createInitialSnapshot();
+  chatbotThreads = [];
   return getMockPetLogSnapshot();
+}
+
+export function getMockChatbotThreads() {
+  return clone(chatbotThreads);
+}
+
+export function createMockChatbotThread(title = "새 질문") {
+  const now = new Date().toISOString();
+  const thread: ChatbotThread = {
+    id: `mock-chat-thread-${Date.now()}`,
+    title: createTitle(title),
+    createdAt: now,
+    updatedAt: now,
+    messages: [],
+  };
+
+  chatbotThreads = [thread, ...chatbotThreads];
+  return clone(thread);
+}
+
+function getOrCreateMockChatbotThread(threadId: string | undefined, question: string) {
+  if (threadId) {
+    return chatbotThreads.find((thread) => thread.id === threadId) ?? null;
+  }
+
+  if (chatbotThreads[0]) {
+    return chatbotThreads[0];
+  }
+
+  const thread = createMockChatbotThread(question);
+  return chatbotThreads.find((item) => item.id === thread.id) ?? chatbotThreads[0];
+}
+
+export function appendMockChatbotExchange(threadId: string | undefined, question: string, result: ChatbotMessageResult) {
+  const thread = getOrCreateMockChatbotThread(threadId, question);
+  if (!thread) {
+    return null;
+  }
+
+  const now = new Date();
+  const createdAt = now.toISOString();
+  const userMessage: ChatbotMessage = {
+    id: `mock-chat-message-${now.getTime()}-user`,
+    role: "user",
+    content: question.trim(),
+    createdAt,
+  };
+  const assistantMessage: ChatbotMessage = {
+    id: `mock-chat-message-${now.getTime()}-assistant`,
+    role: "assistant",
+    content: result.answer,
+    createdAt,
+    referencedRecordIds: result.referencedRecordIds,
+    safetyNotice: result.safetyNotice,
+  };
+
+  thread.title = thread.messages.length === 0 ? createTitle(question) : thread.title;
+  thread.messages = [...thread.messages, userMessage, assistantMessage].slice(-20);
+  thread.updatedAt = createdAt;
+  chatbotThreads = [thread, ...chatbotThreads.filter((item) => item.id !== thread.id)];
+
+  return {
+    thread: clone(thread),
+    userMessage: clone(userMessage),
+    assistantMessage: clone(assistantMessage),
+  };
 }
 
 export function updateMockProfile(input: PetProfile) {

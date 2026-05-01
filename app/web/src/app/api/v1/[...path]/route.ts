@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  appendMockChatbotExchange,
+  createMockChatbotThread,
   createMockRecord,
   createMockSchedule,
   deleteMockRecord,
   deleteMockSchedule,
+  getMockChatbotThreads,
   getMockPetLogSnapshot,
   resetMockPetLogSnapshot,
   updateMockExpansionState,
@@ -49,6 +52,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return ok(getMockPetLogSnapshot());
   }
 
+  if (path[0] === "chatbot" && path[1] === "threads" && path.length === 2) {
+    return ok({ threads: getMockChatbotThreads() });
+  }
+
   return fail("NOT_FOUND", "요청한 API를 찾을 수 없습니다.", 404);
 }
 
@@ -85,8 +92,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  if (path[0] === "chatbot" && path[1] === "messages" && path.length === 2) {
-    if (!body || typeof body.question !== "string") {
+  if (path[0] === "chatbot" && path[1] === "threads" && path.length === 2) {
+    const title = body && typeof body.title === "string" && body.title.trim() ? body.title : "새 질문";
+    return ok({ thread: createMockChatbotThread(title) }, 201);
+  }
+
+  if (path[0] === "chatbot" && path[1] === "threads" && path[2] && path[3] === "messages" && path.length === 4) {
+    if (!body || typeof body.question !== "string" || !body.question.trim()) {
       return fail("VALIDATION_ERROR", "질문을 입력해주세요.");
     }
     const message = await createPetLogChatbotMessage({
@@ -94,7 +106,38 @@ export async function POST(request: NextRequest, context: RouteContext) {
       contextRecordIds: Array.isArray(body.contextRecordIds) ? body.contextRecordIds : [],
       snapshot: getMockPetLogSnapshot(),
     });
-    return ok(message);
+    const exchange = appendMockChatbotExchange(path[2], body.question, message);
+    if (!exchange) {
+      return fail("NOT_FOUND", "대화방을 찾을 수 없습니다.", 404);
+    }
+    return ok({
+      ...exchange,
+      answer: message.answer,
+      referencedRecordIds: message.referencedRecordIds,
+      safetyNotice: message.safetyNotice,
+    });
+  }
+
+  if (path[0] === "chatbot" && path[1] === "messages" && path.length === 2) {
+    if (!body || typeof body.question !== "string" || !body.question.trim()) {
+      return fail("VALIDATION_ERROR", "질문을 입력해주세요.");
+    }
+    const message = await createPetLogChatbotMessage({
+      question: body.question,
+      contextRecordIds: Array.isArray(body.contextRecordIds) ? body.contextRecordIds : [],
+      snapshot: getMockPetLogSnapshot(),
+    });
+    const exchange = appendMockChatbotExchange(typeof body.threadId === "string" ? body.threadId : undefined, body.question, message);
+    if (!exchange) {
+      return fail("NOT_FOUND", "대화방을 찾을 수 없습니다.", 404);
+    }
+    return ok({
+      ...message,
+      threadId: exchange.thread.id,
+      thread: exchange.thread,
+      userMessage: exchange.userMessage,
+      assistantMessage: exchange.assistantMessage,
+    });
   }
 
   return fail("NOT_FOUND", "요청한 API를 찾을 수 없습니다.", 404);
