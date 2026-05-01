@@ -190,7 +190,7 @@ export default function Home() {
         <section>
           <SectionHeader
             action={
-              <Link className="text-xs font-bold text-[#16804b]" href="/notifications">
+              <Link className="inline-flex h-8 items-center rounded-full px-2 text-xs font-bold text-[#16804b]" href="/notifications">
                 전체 보기
               </Link>
             }
@@ -245,7 +245,7 @@ export default function Home() {
           <section>
             <SectionHeader
               action={
-                <Link className="text-xs font-bold text-[#16804b]" href="/suggestions">
+                <Link className="inline-flex h-8 items-center rounded-full px-2 text-xs font-bold text-[#16804b]" href="/suggestions">
                   더보기
                 </Link>
               }
@@ -287,7 +287,7 @@ export default function Home() {
         <section>
           <SectionHeader
             action={
-              <Link className="text-xs font-bold text-[#16804b]" href="/timeline">
+              <Link className="inline-flex h-8 items-center rounded-full px-2 text-xs font-bold text-[#16804b]" href="/timeline">
                 전체 보기
               </Link>
             }

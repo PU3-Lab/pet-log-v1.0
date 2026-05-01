@@ -404,7 +404,7 @@ export default function ProfilePage() {
                         {profile.age} · {profile.breed} · {profile.sex}
                       </p>
                     </div>
-                    <button className="text-sm font-bold text-[#16804b]" onClick={startEdit} type="button">
+                    <button className="inline-flex h-8 shrink-0 items-center rounded-full px-2 text-sm font-bold text-[#16804b]" onClick={startEdit} type="button">
                       편집
                     </button>
                   </div>
