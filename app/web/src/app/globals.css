@@ -35,3 +35,81 @@ button:disabled {
 a {
   text-decoration: none;
 }
+
+@keyframes pet-log-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pet-log-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pet-log-panel-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pet-log-panel-out-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes pet-log-panel-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pet-log-panel-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.pet-log-backdrop-in {
+  animation: pet-log-backdrop-in 180ms ease-out both;
+}
+
+.pet-log-backdrop-out {
+  animation: pet-log-backdrop-out 180ms ease-in both;
+}
+
+.pet-log-panel-in-left {
+  animation: pet-log-panel-in-left 220ms ease-out both;
+}
+
+.pet-log-panel-out-left {
+  animation: pet-log-panel-out-left 180ms ease-in both;
+}
+
+.pet-log-panel-in-right {
+  animation: pet-log-panel-in-right 220ms ease-out both;
+}
+
+.pet-log-panel-out-right {
+  animation: pet-log-panel-out-right 180ms ease-in both;
+}
