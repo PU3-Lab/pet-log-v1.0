@@ -9,6 +9,7 @@ out/
 # Production
 dist/
 build/
+.azure-deploy/
 
 # Local env
 .env

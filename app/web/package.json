@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "azure:package": "bash scripts/azure-package.sh",
+    "azure:deploy": "bash scripts/azure-deploy.sh",
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",

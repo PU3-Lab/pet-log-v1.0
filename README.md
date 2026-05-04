@@ -102,6 +102,54 @@ npm run build
 
 최근 검증 기준으로 `lint`, `typecheck`, `build` 모두 통과했습니다.
 
+## Azure 배포 방법
+
+현재 웹 앱은 Next.js App Router와 API route를 사용하므로 정적 파일 호스팅이 아니라 Azure App Service의 Node.js 런타임으로 배포합니다.
+
+배포 대상:
+
+- Resource Group: `pet-log-rg`
+- App Service: `pet-log-kp-20260504`
+- 기본 URL: `https://pet-log-kp-20260504.azurewebsites.net`
+- Runtime: `NODE|22-lts`
+- 시작 명령: `node server.js`
+
+최초 Azure 리소스가 없을 때는 다음 순서로 생성합니다.
+
+```bash
+az login
+az account set --subscription "Azure for Students"
+
+az group create -n pet-log-rg -l koreacentral
+az appservice plan create -g pet-log-rg -n pet-log-plan --sku F1 --is-linux
+az webapp create -g pet-log-rg -p pet-log-plan -n pet-log-kp-20260504 --runtime "NODE:22-lts"
+```
+
+앱을 빌드하고 Azure 배포용 ZIP만 만들 때는 다음 명령을 사용합니다.
+
+```bash
+cd app/web
+npm run azure:package
+```
+
+ZIP 파일은 `app/web/.azure-deploy/pet-log-web.zip`에 생성되며, git에는 포함하지 않습니다.
+
+빌드, 패키징, App Service 시작 명령 설정, ZIP 배포를 한 번에 실행하려면 다음 명령을 사용합니다.
+
+```bash
+cd app/web
+npm run azure:deploy -- pet-log-rg pet-log-kp-20260504 "Azure for Students"
+```
+
+배포 후 기본 동작 확인:
+
+```bash
+curl -I https://pet-log-kp-20260504.azurewebsites.net
+curl -I https://pet-log-kp-20260504.azurewebsites.net/api/v1/me/pet-log
+```
+
+현재 환경변수를 따로 설정하지 않으면 AI provider는 기본값인 `mock`으로 동작합니다. 실제 OpenAI 연동이 필요하면 App Service 환경변수에 `PET_LOG_AI_PROVIDER=openai`, `OPENAI_API_KEY`, `PET_LOG_OPENAI_MODEL` 등을 설정합니다.
+
 ## 남은 작업
 
 자세한 내용은 `_workspace/remaining-page-work.md`에 정리되어 있습니다.
