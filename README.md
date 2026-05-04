@@ -167,5 +167,6 @@ curl -I https://pet-log-kp-20260504.azurewebsites.net/api/v1/me/pet-log
 
 - `기획.md`: 서비스 기획서
 - `_workspace/remaining-page-work.md`: 현재 구현 상태와 남은 작업
+- `docs/operations/azure-app-service-runbook.md`: Azure App Service 운영 매뉴얼
 - `docs/harness/pet-log-mvp/team-spec.md`: Pet Log MVP 하네스 팀 구성
 - `.agents/skills/`: 프로젝트 전용 에이전트 스킬
