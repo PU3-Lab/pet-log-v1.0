@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { PetIcon } from "@/components/pet-icons";
 import { categoryLabels } from "@/lib/mock-data";
 import type { RecordCategory } from "@/lib/types";
 
@@ -14,12 +15,19 @@ export function SectionHeader({ title, action }: { title: string; action?: React
 export function Card({
   children,
   className = "",
+  interactive = false,
+  motion = "none",
 }: {
   children: ReactNode;
   className?: string;
+  interactive?: boolean;
+  motion?: "none" | "rise";
 }) {
+  const motionClassName = motion === "rise" ? "pet-log-card-rise" : "";
+  const interactiveClassName = interactive ? "pet-log-pressable" : "";
+
   return (
-    <section className={`rounded-2xl border border-[#cdd8c6] bg-white p-4 shadow-[0_10px_28px_rgba(49,65,44,0.1)] ${className}`}>
+    <section className={`rounded-2xl border border-[#cdd8c6] bg-white p-4 shadow-[0_10px_28px_rgba(49,65,44,0.1)] ${motionClassName} ${interactiveClassName} ${className}`}>
       {children}
     </section>
   );
@@ -87,7 +95,7 @@ export function MiniLineChart({ values, tone = "#16804b" }: { values: number[]; 
 
   return (
     <svg className="h-[70px] w-full" role="img" viewBox={`0 0 ${width} ${height}`}>
-      <polyline fill="none" points={points} stroke={tone} strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+      <polyline className="pet-log-chart-draw" fill="none" points={points} stroke={tone} strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
       {values.map((value, index) => {
         const x = (index / (values.length - 1)) * width;
         const y = height - ((value - min) / range) * (height - 16) - 8;
@@ -133,7 +141,7 @@ export function MultiLineChart({ series }: { series: MultiLineChartSeries[] }) {
 
         return (
           <g key={item.label}>
-            <polyline fill="none" points={points} stroke={item.color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+            <polyline className="pet-log-chart-draw" fill="none" points={points} stroke={item.color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
             {item.values.map((value, index) => {
               const point = getPoint(value, index, item.values.length);
               return <circle cx={point.x} cy={point.y} fill="white" key={`${item.label}-${index}`} r="2.7" stroke={item.color} strokeWidth="1.8" />;
@@ -145,10 +153,14 @@ export function MultiLineChart({ series }: { series: MultiLineChartSeries[] }) {
   );
 }
 
-export function AiMascot() {
+export function AiMascot({ active = false, label = "AI" }: { active?: boolean; label?: string }) {
   return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#caead5] bg-[#f4fff7] text-lg font-black text-[#16804b] shadow-inner">
-      AI
+    <div className={`relative grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#caead5] bg-[#f4fff7] text-[#16804b] shadow-inner ${active ? "pet-log-float-soft" : ""}`}>
+      <PetIcon className="h-5 w-5" name="sparkle" />
+      <span className="absolute -bottom-1 rounded-full border border-[#caead5] bg-white px-1.5 text-[9px] font-black leading-4 text-[#16804b]">
+        {label}
+      </span>
+      {active ? <span className="pet-log-pulse-dot absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-[#16804b]" /> : null}
     </div>
   );
 }

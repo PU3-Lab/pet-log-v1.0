@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
 import { structureRecordPreview } from "@/lib/api-client";
@@ -10,13 +11,13 @@ import { categoryLabels } from "@/lib/mock-data";
 import { getInputModeFeedback, type RecordInputMode } from "@/lib/record-input";
 import type { RecordCategory, StructuredRecord } from "@/lib/types";
 
-const categoryOptions: { label: string; value: RecordCategory }[] = [
-  { label: "식사", value: "meal" },
-  { label: "산책", value: "walk" },
-  { label: "배변", value: "stool" },
-  { label: "병원/약", value: "medical" },
-  { label: "행동", value: "behavior" },
-];
+const categoryOptions = [
+  { icon: "meal", label: "식사", value: "meal" },
+  { icon: "walk", label: "산책", value: "walk" },
+  { icon: "stool", label: "배변", value: "stool" },
+  { icon: "medical", label: "병원/약", value: "medical" },
+  { icon: "behavior", label: "행동", value: "behavior" },
+] as const satisfies ReadonlyArray<{ icon: "meal" | "walk" | "stool" | "medical" | "behavior"; label: string; value: RecordCategory }>;
 
 const inputModes: { label: string; value: RecordInputMode }[] = [
   { label: "텍스트", value: "text" },
@@ -150,7 +151,7 @@ export default function RecordPage() {
     <AppShell
       bottomAction={
         <button
-          className={`h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] disabled:bg-[#8ab99f] ${
+          className={`pet-log-pressable h-12 w-full rounded-2xl text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)] disabled:bg-[#8ab99f] ${
             isInvalid ? "bg-[#8ab99f]" : "bg-[#16804b]"
           }`}
           disabled={isSaving}
@@ -164,8 +165,11 @@ export default function RecordPage() {
       title="기록 입력"
     >
       <div className="space-y-5">
-        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
-          <p className="text-sm font-bold text-[#16804b]">기록 준비</p>
+        <Card className="bg-gradient-to-br from-white to-[#edf8ed]" motion="rise">
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+            <PetIcon className="h-4 w-4" name="sparkle" />
+            기록 준비
+          </p>
           <h2 className="mt-1 text-lg font-black text-[#1f2922]">오늘 케어 내용을 한 번에 정리해요</h2>
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
@@ -191,7 +195,7 @@ export default function RecordPage() {
               return (
                 <button
                   aria-pressed={active}
-                  className={`min-h-12 rounded-2xl border px-3 text-left text-sm font-bold transition ${
+                  className={`pet-log-pressable flex min-h-16 items-center gap-3 rounded-2xl border px-3 text-left text-sm font-bold transition ${
                     active
                       ? "border-[#16804b] bg-[#16804b] text-white"
                       : "border-[#dfe6d9] bg-white text-[#4a5547] shadow-[0_8px_22px_rgba(49,65,44,0.05)]"
@@ -200,17 +204,22 @@ export default function RecordPage() {
                   onClick={() => setCategory(item.value)}
                   type="button"
                 >
-                  <span className="block">{item.label}</span>
-                  <span className={`mt-1 block text-[11px] font-semibold ${active ? "text-white/80" : "text-[#7c8777]"}`}>
-                    {item.value === "meal"
-                      ? "먹은 양"
-                      : item.value === "walk"
-                        ? "시간/거리"
-                        : item.value === "stool"
-                          ? "횟수/상태"
-                          : item.value === "medical"
-                            ? "약/진료"
-                            : "감정/반응"}
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${active ? "bg-white/20" : "bg-[#f4f7f0] text-[#16804b]"}`}>
+                    <PetIcon className="h-5 w-5" name={active ? "check" : item.icon} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block">{item.label}</span>
+                    <span className={`mt-1 block text-[11px] font-semibold ${active ? "text-white/80" : "text-[#7c8777]"}`}>
+                      {item.value === "meal"
+                        ? "먹은 양"
+                        : item.value === "walk"
+                          ? "시간/거리"
+                          : item.value === "stool"
+                            ? "횟수/상태"
+                            : item.value === "medical"
+                              ? "약/진료"
+                              : "감정/반응"}
+                    </span>
                   </span>
                 </button>
               );
@@ -218,7 +227,7 @@ export default function RecordPage() {
           </div>
         </section>
 
-        <Card>
+        <Card motion="rise">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-[#1f2922]">입력 방식</h2>
@@ -233,7 +242,7 @@ export default function RecordPage() {
               return (
                 <button
                   aria-pressed={active}
-                  className={`min-h-14 rounded-xl border px-2 text-sm font-bold ${
+                  className={`pet-log-pressable min-h-14 rounded-xl border px-2 text-sm font-bold ${
                     active ? "border-[#16804b] bg-[#e7f4eb] text-[#0b7a43]" : "border-[#dce5d5] bg-white text-[#40513f]"
                   }`}
                   key={mode.value}
@@ -256,7 +265,7 @@ export default function RecordPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card motion="rise">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-bold">자연어 기록</h2>
             <span className={`text-xs font-semibold ${detail.length > maxLength ? "text-[#be4c3c]" : "text-[#9aa494]"}`}>
@@ -281,7 +290,10 @@ export default function RecordPage() {
           {error ? <p className="mt-3 text-sm font-semibold text-[#be4c3c]">{error}</p> : null}
           {savedId ? (
             <div className="mt-3 flex items-center justify-between rounded-2xl bg-[#edf8ed] px-4 py-3 text-sm">
-              <span className="font-bold text-[#16804b]">기록이 저장되었습니다.</span>
+              <span className="inline-flex items-center gap-2 font-bold text-[#16804b]">
+                <PetIcon className="h-4 w-4" name="check" />
+                기록이 저장되었습니다.
+              </span>
               <Link className="font-bold text-[#0f6e3e]" href="/timeline">
                 타임라인 보기
               </Link>
@@ -292,10 +304,13 @@ export default function RecordPage() {
         <section>
           <SectionHeader title="AI 구조화 미리보기" />
           <div className="space-y-3">
-            <Card className="p-4">
+            <Card className="p-4" motion="rise">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <span className={`grid h-8 w-8 place-items-center rounded-full ${showPreviewLoading ? "pet-log-pulse-dot bg-[#edf8ed] text-[#16804b]" : "bg-[#edf8ed] text-[#16804b]"}`}>
+                      <PetIcon className="h-4 w-4" name="sparkle" />
+                    </span>
                     <CategoryBadge category={displayPreview.suggestedCategory} />
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${displayPreview.needsConfirmation ? "bg-[#fff2df] text-[#a4651a]" : "bg-[#e8f5df] text-[#32783c]"}`}>
                       {showPreviewLoading ? "AI 확인 중" : `신뢰도 ${confidencePercent}%`}
@@ -313,7 +328,7 @@ export default function RecordPage() {
               </div>
               {displayPreview.suggestedCategory !== category ? (
                 <button
-                  className="mt-3 h-10 w-full rounded-xl border border-[#cfe2cd] bg-[#f4faf2] text-sm font-bold text-[#16804b]"
+                  className="pet-log-pressable mt-3 h-10 w-full rounded-xl border border-[#cfe2cd] bg-[#f4faf2] text-sm font-bold text-[#16804b]"
                   onClick={() => setCategory(displayPreview.suggestedCategory)}
                   type="button"
                 >
@@ -342,7 +357,7 @@ export default function RecordPage() {
           <SectionHeader title="최근 기록" />
           <div className="space-y-2">
             {preview.map((record) => (
-              <Card className="p-3" key={record.id}>
+              <Card className="p-3" key={record.id} motion="rise">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <CategoryBadge category={record.category} />
@@ -354,7 +369,7 @@ export default function RecordPage() {
               </Card>
             ))}
             {preview.length === 0 ? (
-              <Card className="p-4 text-center">
+              <Card className="p-4 text-center" motion="rise">
                 <p className="text-sm font-bold text-[#1f2922]">아직 최근 기록이 없습니다.</p>
                 <p className="mt-1 text-xs leading-5 text-[#667262]">첫 기록을 저장하면 여기에 바로 표시됩니다.</p>
               </Card>

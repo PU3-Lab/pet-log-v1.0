@@ -12,16 +12,25 @@ type PetIconProps = {
 		| "plus"
 		| "timeline"
 		| "schedule"
-			| "settings"
-			| "shared"
-			| "hospital"
-			| "shopping"
-			| "question"
-			| "send"
-			| "mic"
-			| "close"
-			| "heart"
-			| "syringe";
+		| "settings"
+		| "shared"
+		| "hospital"
+		| "shopping"
+		| "question"
+		| "send"
+		| "mic"
+		| "close"
+		| "heart"
+		| "syringe"
+		| "meal"
+		| "walk"
+		| "stool"
+		| "medical"
+		| "behavior"
+		| "sparkle"
+		| "check"
+		| "alert"
+		| "activity";
   className?: string;
 };
 
@@ -48,6 +57,15 @@ const iconPaths: Record<PetIconProps["name"], string> = {
 		close: "M6 6l12 12M18 6 6 18",
 		heart: "M20.8 8.6c0 5.4-8.8 10.4-8.8 10.4S3.2 14 3.2 8.6A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 8.8 2.6Z",
 		syringe: "M18 3l3 3M11 10l7-7 3 3-7 7M4 20l6-6M6 18l-2 2M9 15l-4-4 6-6 4 4",
+		meal: "M6 3v7m4-7v7M6 10h4m-2 0v11m8-18v18m0-18c2.2 1.4 3.5 3.6 3.5 6.5 0 2.2-1.3 4-3.5 4",
+		walk: "M9 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm5.5 6.5 2 2.5 3 1M7 9l4 2 2 4 3 6M11 11l-3 4-4 1",
+		stool: "M7 17h10M6 20h12M9 14h6a3 3 0 0 0-3-3 3 3 0 0 0-3 3Zm2-3a3 3 0 0 1 3-5 3 3 0 0 1 3 5",
+		medical: "M12 5v14M5 12h14M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
+		behavior: "M4 14c2.5-5 5.5-5 8 0 2.5-5 5.5-5 8 0M7 17c3.2 2.5 6.8 2.5 10 0M8 10h.01M16 10h.01",
+		sparkle: "M12 3l1.7 5.1L19 10l-5.3 1.9L12 17l-1.7-5.1L5 10l5.3-1.9L12 3Zm6 11 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14ZM5 4l.8 2.2L8 7l-2.2.8L5 10l-.8-2.2L2 7l2.2-.8L5 4Z",
+		check: "M5 12.5 10 17l9-10",
+		alert: "M12 8v5m0 4h.01M10.3 4.7 2.9 17.5A2 2 0 0 0 4.6 20h14.8a2 2 0 0 0 1.7-2.5L13.7 4.7a2 2 0 0 0-3.4 0Z",
+		activity: "M4 12h4l2-6 4 12 2-6h4",
 	};
 
 export function PetIcon({ name, className }: PetIconProps) {

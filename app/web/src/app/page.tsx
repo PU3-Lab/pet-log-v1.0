@@ -380,7 +380,7 @@ export default function Home() {
       action={
         <Link
           aria-label="기록 추가"
-          className="grid h-10 w-10 place-items-center rounded-full bg-[#16804b] text-white shadow-sm"
+          className="pet-log-pressable grid h-10 w-10 place-items-center rounded-full bg-[#16804b] text-white shadow-sm"
           href="/record"
         >
           <PetIcon className="h-5 w-5" name="plus" />
@@ -390,8 +390,9 @@ export default function Home() {
       title={`${profile.name}의 오늘`}
     >
       <div className="space-y-5">
-        <section className="rounded-2xl border border-[#cdd8c6] bg-white p-4 shadow-[0_10px_28px_rgba(49,65,44,0.1)]">
-          <div className="grid grid-cols-[52px_1fr_auto] items-center gap-3">
+        <Card className="relative overflow-hidden p-4" motion="rise">
+          <div className="absolute right-0 -top-12 h-24 w-24 rounded-full bg-[#e9f6df]" />
+          <div className="relative grid grid-cols-[52px_1fr_auto] items-center gap-3">
             <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-[#eaf5e5] text-xl font-black text-[#16804b]">
               {profile.photoDataUrl ? (
                 <Image
@@ -424,23 +425,26 @@ export default function Home() {
               보기
             </Link>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="relative mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-2xl bg-[#f4f7f0] px-3 py-3 text-center">
+              <PetIcon className="mx-auto h-4 w-4 text-[#16804b]" name="record" />
               <p className="text-[11px] font-bold text-[#778174]">최근 기록</p>
               <p className="mt-1 text-base font-black text-[#1f2922]">{latestRecords.length}</p>
             </div>
             <div className="rounded-2xl bg-[#fffaf0] px-3 py-3 text-center">
+              <PetIcon className="mx-auto h-4 w-4 text-[#a4651a]" name="bell" />
               <p className="text-[11px] font-bold text-[#778174]">오늘 알림</p>
               <p className="mt-1 text-base font-black text-[#1f2922]">{notifications.length}</p>
             </div>
             <div className="rounded-2xl bg-[#f6f9ff] px-3 py-3 text-center">
+              <PetIcon className="mx-auto h-4 w-4 text-[#356aa8]" name="schedule" />
               <p className="text-[11px] font-bold text-[#778174]">일정</p>
               <p className="mt-1 text-base font-black text-[#1f2922]">{pendingSchedules}</p>
             </div>
           </div>
-        </section>
+        </Card>
 
-        <Card className="overflow-hidden border-[#d8e8d1] bg-[#fffdf7] p-0">
+        <Card className="overflow-hidden border-[#d8e8d1] bg-[#fffdf7] p-0" motion="rise">
           <div className="bg-[linear-gradient(135deg,#fffdf7_0%,#eef8ec_58%,#f6fbff_100%)] p-4">
             <div className="flex items-start gap-3">
               <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white text-lg font-black text-[#16804b] shadow-inner">
@@ -468,7 +472,7 @@ export default function Home() {
             <div className="mt-4 flex flex-wrap gap-2">
               {petChatQuestions.slice(0, 2).map((question) => (
                 <button
-                  className="h-9 rounded-full border border-[#d8e6d2] bg-white px-3 text-xs font-bold text-[#40513f]"
+                  className="pet-log-pressable h-9 rounded-full border border-[#d8e6d2] bg-white px-3 text-xs font-bold text-[#40513f]"
                   key={question}
                   onClick={() => {
                     openPetChat();
@@ -481,7 +485,7 @@ export default function Home() {
               ))}
             </div>
             <button
-              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#1f2922] px-4 text-sm font-black text-white shadow-[0_10px_24px_rgba(31,41,34,0.18)]"
+              className="pet-log-pressable mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#1f2922] px-4 text-sm font-black text-white shadow-[0_10px_24px_rgba(31,41,34,0.18)]"
               onClick={openPetChat}
               type="button"
             >
@@ -492,15 +496,18 @@ export default function Home() {
         </Card>
 
         {settings.aiInsightEnabled ? (
-          <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
+          <Card className="bg-gradient-to-br from-white to-[#edf8ed]" motion="rise">
             <div className="flex gap-3">
-              <AiMascot />
+              <AiMascot active />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-[#16804b]">AI 질문</p>
+                <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+                  <PetIcon className="h-4 w-4" name="sparkle" />
+                  AI 질문
+                </p>
                 <h2 className="mt-1 text-lg font-bold leading-7 text-[#1f2922]">오늘 배변 상태는 어땠나요?</h2>
                 <p className="mt-2 text-sm leading-6 text-[#62705f]">어제 기록이 비어 있어 변화 판단에 필요합니다.</p>
                 <Link
-                  className="mt-4 inline-flex h-10 items-center rounded-xl bg-[#16804b] px-5 text-sm font-bold text-white"
+                  className="pet-log-pressable mt-4 inline-flex h-10 items-center rounded-xl bg-[#16804b] px-5 text-sm font-bold text-white"
                   href="/record"
                 >
                   기록하기
@@ -514,7 +521,7 @@ export default function Home() {
           <div className="flex justify-end min-[361px]:hidden">
             <button
               aria-haspopup="dialog"
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.24)]"
+              className="pet-log-float-soft pet-log-pressable inline-flex h-12 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.24)]"
               onClick={openChatbot}
               type="button"
             >
@@ -535,7 +542,7 @@ export default function Home() {
           />
           <div className="space-y-3">
             {notifications.map((notification) => (
-              <Card className={`border-l-4 p-4 ${toneCard[notification.tone]}`} key={notification.id}>
+              <Card className={`border-l-4 p-4 ${toneCard[notification.tone]}`} key={notification.id} motion="rise">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className={`text-xs font-bold ${toneText[notification.tone]}`}>
@@ -544,7 +551,7 @@ export default function Home() {
                     <h3 className="mt-1 text-sm font-bold text-[#1f2922]">{notification.title}</h3>
                     <p className="mt-1 text-xs leading-5 text-[#667262]">{notification.detail}</p>
                   </div>
-                  <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot[notification.tone]}`} />
+                  <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot[notification.tone]} ${notification.tone === "red" || notification.tone === "orange" ? "pet-log-pulse-dot" : ""}`} />
                 </div>
               </Card>
             ))}
@@ -555,7 +562,8 @@ export default function Home() {
           <SectionHeader title="오늘 요약" />
           <div className="grid grid-cols-3 gap-2">
             {todaySummary.map((item) => (
-              <Card className={`p-3 text-center ${toneCard[item.tone]}`} key={item.category}>
+              <Card className={`p-3 text-center ${toneCard[item.tone]}`} key={item.category} motion="rise">
+                <PetIcon className={`mx-auto mb-1 h-4 w-4 ${toneText[item.tone]}`} name={item.category} />
                 <p className="text-xs font-bold text-[#788276]">{item.label}</p>
                 <p className="mt-2 truncate text-sm font-black text-[#1f2922]">{item.value}</p>
                 <p className={`mt-1 text-[11px] font-semibold ${toneText[item.tone]}`}>{item.state}</p>
@@ -566,14 +574,14 @@ export default function Home() {
 
         <section>
           <SectionHeader title="최근 변화" />
-          <Card className={`border-l-4 p-4 ${toneCard[recentChange.tone]}`}>
+          <Card className={`border-l-4 p-4 ${toneCard[recentChange.tone]}`} motion="rise">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className={`text-xs font-bold ${toneText[recentChange.tone]}`}>{recentChange.label}</p>
                 <h3 className="mt-1 text-sm font-black text-[#1f2922]">{recentChange.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[#62705f]">{recentChange.detail}</p>
               </div>
-              <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot[recentChange.tone]}`} />
+              <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${toneDot[recentChange.tone]} ${recentChange.tone === "red" || recentChange.tone === "orange" ? "pet-log-pulse-dot" : ""}`} />
             </div>
           </Card>
         </section>
@@ -590,14 +598,14 @@ export default function Home() {
             />
             <div className="space-y-3">
               {homeSuggestions.map((suggestion) => (
-                <Card className="p-4" key={suggestion.id}>
+                <Card className="p-4" key={suggestion.id} motion="rise">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold text-[#16804b]">{suggestion.category}</p>
                       <h3 className="mt-1 font-bold text-[#1f2922]">{suggestion.title}</h3>
                       <p className="mt-2 text-sm leading-6 text-[#62705f]">{suggestion.detail}</p>
                     </div>
-                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#16804b]" />
+                    <PetIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#16804b]" name="sparkle" />
                   </div>
                 </Card>
               ))}
@@ -607,7 +615,7 @@ export default function Home() {
 
         <section>
           <SectionHeader title="오늘 할 일" />
-          <Card>
+          <Card motion="rise">
             <ul className="space-y-3">
               {todos.map((todo, index) => (
                 <li className="flex items-center gap-3 text-sm font-semibold text-[#3d4639]" key={todo}>
@@ -633,7 +641,7 @@ export default function Home() {
           <div className="space-y-3">
             {latestRecords.length > 0 ? (
               latestRecords.map((record) => (
-                <Card className="p-4" key={record.id}>
+                <Card className="p-4" key={record.id} motion="rise">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -650,7 +658,7 @@ export default function Home() {
                 </Card>
               ))
             ) : (
-              <Card className="p-4">
+                <Card className="p-4" motion="rise">
                 <p className="text-sm font-bold text-[#1f2922]">아직 최근 기록이 없습니다.</p>
                 <p className="mt-1 text-sm leading-6 text-[#667262]">첫 기록을 저장하면 여기에 바로 표시됩니다.</p>
               </Card>
@@ -662,7 +670,7 @@ export default function Home() {
       {!isChatbotOpen && !isPetChatOpen ? (
         <button
           aria-haspopup="dialog"
-          className="absolute bottom-20 right-5 z-30 hidden h-14 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.32)] min-[361px]:inline-flex"
+          className="pet-log-float-soft pet-log-pressable absolute bottom-20 right-5 z-30 hidden h-14 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.32)] min-[361px]:inline-flex"
           onClick={openChatbot}
           type="button"
         >

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, MultiLineChart, Pill, SectionHeader } from "@/components/ui";
 import { getAiInsights } from "@/lib/ai-insights";
@@ -34,6 +35,13 @@ const toneCard: Record<AnalysisTone, string> = {
   blue: "border-[#d4e0f5] bg-[#f6f9ff]",
 };
 
+const toneIcon: Record<AnalysisTone, "check" | "alert" | "activity" | "sparkle"> = {
+  green: "check",
+  orange: "alert",
+  red: "alert",
+  blue: "activity",
+};
+
 export default function AnalysisPage() {
   const { records, settings } = usePetLog();
   const [activeRange, setActiveRange] = useState<AnalysisRange>("weekly");
@@ -61,27 +69,36 @@ export default function AnalysisPage() {
           ))}
         </div>
 
-        <Card className="bg-gradient-to-br from-white to-[#f2f8ec]">
-          <p className="text-sm font-bold text-[#16804b]">{summary.period}</p>
+        <Card className="bg-gradient-to-br from-white to-[#f2f8ec]" motion="rise">
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+            <PetIcon className="h-4 w-4" name="sparkle" />
+            {summary.period}
+          </p>
           <h2 className="mt-2 text-lg font-black text-[#1f2922]">{summary.title}</h2>
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <PetIcon className="mx-auto h-4 w-4 text-[#16804b]" name="record" />
               <p className="text-[11px] font-bold text-[#778174]">기록</p>
               <p className="mt-1 text-base font-black text-[#1f2922]">{scopedRecords.length}</p>
             </div>
             <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <PetIcon className={`mx-auto h-4 w-4 ${alertCount > 0 ? "pet-log-pulse-dot text-[#be4c3c]" : "text-[#16804b]"}`} name={alertCount > 0 ? "alert" : "check"} />
               <p className="text-[11px] font-bold text-[#778174]">주의</p>
               <p className="mt-1 text-base font-black text-[#1f2922]">{alertCount}</p>
             </div>
             <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+              <PetIcon className="mx-auto h-4 w-4 text-[#356aa8]" name="analysis" />
               <p className="text-[11px] font-bold text-[#778174]">지표</p>
               <p className="mt-1 text-base font-black text-[#1f2922]">{metrics.length}</p>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {summary.cards.map((card) => (
-              <div className={`rounded-2xl border p-3 ${toneCard[card.tone]}`} key={card.id}>
-                <p className="text-xs font-bold text-[#7b8576]">{card.label}</p>
+              <div className={`pet-log-card-rise rounded-2xl border p-3 ${toneCard[card.tone]}`} key={card.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-[#7b8576]">{card.label}</p>
+                  <PetIcon className={`h-4 w-4 ${toneText[card.tone]}`} name={toneIcon[card.tone]} />
+                </div>
                 <p className="mt-1 text-sm font-black text-[#1f2922]">{card.value}</p>
                 <p className={`mt-1 text-xs font-bold ${toneText[card.tone]}`}>{card.trend}</p>
               </div>
@@ -102,10 +119,13 @@ export default function AnalysisPage() {
               </Pill>
             ))}
           </div>
-          <Card>
+          <Card motion="rise">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-bold text-[#1f2922]">{trendChart.title}</h3>
+                <h3 className="inline-flex items-center gap-1.5 font-bold text-[#1f2922]">
+                  <PetIcon className={`h-4 w-4 ${toneText[trendChart.tone]}`} name={toneIcon[trendChart.tone]} />
+                  {trendChart.title}
+                </h3>
                 <p className="mt-1 text-xs font-semibold text-[#7b8576]">{trendChart.detail}</p>
               </div>
               <span className={`rounded-full bg-[#f4f7f0] px-3 py-1 text-xs font-bold ${toneText[trendChart.tone]}`}>
@@ -129,12 +149,13 @@ export default function AnalysisPage() {
           <div className="space-y-3">
             {settings.aiInsightEnabled ? (
               aiInsights.map((insight) => (
-                <Card key={insight.id}>
+                <Card key={insight.id} motion="rise">
                   <p
-                    className={`text-sm font-bold ${
+                    className={`inline-flex items-center gap-1.5 text-sm font-bold ${
                       insight.tone === "red" ? "text-[#be4c3c]" : insight.tone === "orange" ? "text-[#bb721e]" : "text-[#16804b]"
                     }`}
                   >
+                    <PetIcon className="h-4 w-4" name={insight.tone === "red" || insight.tone === "orange" ? "alert" : "check"} />
                     {insight.tone === "red" ? "주의" : insight.tone === "orange" ? "확인 필요" : "안정"}
                   </p>
                   <h2 className="mt-2 text-base font-black text-[#1f2922]">{insight.title}</h2>
@@ -142,7 +163,7 @@ export default function AnalysisPage() {
                 </Card>
               ))
             ) : (
-              <Card className="p-5 text-center">
+              <Card className="p-5 text-center" motion="rise">
                 <h2 className="text-sm font-bold text-[#1f2922]">AI 분석이 꺼져 있습니다.</h2>
                 <p className="mt-2 text-sm leading-6 text-[#667262]">설정에서 AI 요약과 케어 제안을 다시 켤 수 있습니다.</p>
               </Card>
@@ -152,8 +173,11 @@ export default function AnalysisPage() {
 
         <section>
           <SectionHeader title="병원 제출용 요약" />
-          <Card>
-            <p className="text-sm font-bold text-[#16804b]">{vetBrief.title}</p>
+          <Card motion="rise">
+            <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+              <PetIcon className="h-4 w-4" name="medical" />
+              {vetBrief.title}
+            </p>
             <p className="mt-2 text-sm leading-6 text-[#667262]">{vetBrief.detail}</p>
             <ul className="mt-4 space-y-2">
               {vetBrief.items.map((item) => (
@@ -165,8 +189,11 @@ export default function AnalysisPage() {
           </Card>
         </section>
 
-        <Card className="bg-[#fffaf0]">
-          <p className="text-sm font-bold text-[#b56d19]">안전 안내</p>
+        <Card className="bg-[#fffaf0]" motion="rise">
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#b56d19]">
+            <PetIcon className="h-4 w-4" name="alert" />
+            안전 안내
+          </p>
           <p className="mt-2 text-sm leading-6 text-[#65533a]">
             AI 분석은 저장된 기록을 바탕으로 한 참고 정보입니다. 확정 진단이 아니며, 증상이 지속되거나 심하면 병원 상담을 권장합니다.
           </p>
