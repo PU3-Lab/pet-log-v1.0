@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, Pill, SectionHeader } from "@/components/ui";
 import { createPreparedInvite } from "@/lib/expansion-state";
@@ -41,21 +42,27 @@ export default function SharedCarePage() {
     <AppShell subtitle="보호자와 함께 보는 기록" title="공동 관리">
       <div className="space-y-5">
         <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
-          <p className="text-sm font-bold text-[#16804b]">공유 준비</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+            <PetIcon className="h-4 w-4" name="shared" />
+            공유 준비
+          </p>
           <h2 className="mt-1 text-xl font-black text-[#1f2922]">{summary.title}</h2>
           <p className="mt-2 text-sm leading-6 text-[#667262]">{summary.detail}</p>
         </Card>
 
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#16804b]" name="community" />
             <p className="text-[11px] font-bold text-[#778174]">멤버</p>
             <p className="mt-1 text-base font-black text-[#1f2922]">{summary.members.length}</p>
           </div>
           <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#356aa8]" name="plus" />
             <p className="text-[11px] font-bold text-[#778174]">초대 준비</p>
             <p className="mt-1 text-base font-black text-[#1f2922]">{sharedCareState.preparedInvites.length}</p>
           </div>
           <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#bb721e]" name="bell" />
             <p className="text-[11px] font-bold text-[#778174]">알림</p>
             <p className="mt-1 text-base font-black text-[#1f2922]">{sharedCareState.notificationSharingEnabled ? "ON" : "OFF"}</p>
           </div>
@@ -90,10 +97,11 @@ export default function SharedCarePage() {
                 </div>
               </div>
               <button
-                className="h-12 w-full rounded-2xl bg-[#16804b] text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)]"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#16804b] text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)]"
                 onClick={saveInviteDraft}
                 type="button"
               >
+                <PetIcon className="h-5 w-5" name="plus" />
                 초대 저장
               </button>
               {sharedCareState.inviteDraftMessage ? (
@@ -112,7 +120,10 @@ export default function SharedCarePage() {
               <Card className="p-4" key={member.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold text-[#16804b]">{member.role}</p>
+                    <p className="inline-flex items-center gap-1.5 text-xs font-bold text-[#16804b]">
+                      <PetIcon className="h-3.5 w-3.5" name="profile" />
+                      {member.role}
+                    </p>
                     <h2 className="mt-1 text-base font-black text-[#1f2922]">{member.name}</h2>
                     <p className="mt-2 text-sm leading-6 text-[#667262]">{member.permission}</p>
                   </div>
@@ -129,6 +140,7 @@ export default function SharedCarePage() {
             <ul className="space-y-2">
               {summary.activityItems.map((item) => (
                 <li className="rounded-xl bg-[#f4f7f0] px-3 py-2 text-xs font-semibold leading-5 text-[#3d4639]" key={item}>
+                  <PetIcon className="mr-1 inline h-3.5 w-3.5 text-[#16804b]" name="activity" />
                   {item}
                 </li>
               ))}
@@ -139,7 +151,10 @@ export default function SharedCarePage() {
         <Card className="bg-[#fffaf0]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-bold text-[#b56d19]">알림 공유 범위</p>
+              <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#b56d19]">
+                <PetIcon className="h-4 w-4" name="bell" />
+                알림 공유 범위
+              </p>
               <p className="mt-2 text-sm leading-6 text-[#65533a]">{summary.notificationSharingDetail}</p>
             </div>
             <button

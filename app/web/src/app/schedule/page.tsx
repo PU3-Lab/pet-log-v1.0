@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, Pill, SectionHeader } from "@/components/ui";
 import { getScheduleStatus, getScheduleSummary, getUpcomingSchedules, scheduleCategoryLabels } from "@/lib/schedules";
@@ -15,6 +16,14 @@ const toneClasses: Record<ScheduleTone, string> = {
   orange: "bg-[#fff2df] text-[#bb721e]",
   red: "bg-[#ffe9e6] text-[#be4c3c]",
   blue: "bg-[#eaf2ff] text-[#2e67a7]",
+};
+
+const scheduleCategoryIcons: Record<ScheduleCategory, "syringe" | "medical" | "hospital" | "sparkle" | "meal"> = {
+  vaccination: "syringe",
+  medication: "medical",
+  checkup: "hospital",
+  grooming: "sparkle",
+  food: "meal",
 };
 
 function todayInputValue() {
@@ -65,7 +74,10 @@ export default function SchedulePage() {
     <AppShell subtitle="일정 기반 리마인더" title="일정">
       <div className="space-y-5">
         <Card className="bg-gradient-to-br from-white to-[#eaf2ff]">
-          <p className="text-sm font-bold text-[#2e67a7]">다가오는 케어</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#2e67a7]">
+            <PetIcon className="h-4 w-4" name="schedule" />
+            다가오는 케어
+          </p>
           <h2 className="mt-1 text-2xl font-black text-[#1f2922]">{summary.totalActive}개</h2>
           <p className="mt-2 text-sm leading-6 text-[#667262]">
             {summary.nextSchedule
@@ -74,14 +86,17 @@ export default function SchedulePage() {
           </p>
 	          <div className="mt-4 grid grid-cols-3 gap-2">
 	            <div className="rounded-2xl bg-white/75 p-3">
+                <PetIcon className="h-4 w-4 text-[#16804b]" name="schedule" />
 	              <p className="text-xs font-bold text-[#778174]">진행 중</p>
 	              <p className="mt-1 text-lg font-black text-[#1f2922]">{summary.totalActive}개</p>
 	            </div>
 	            <div className="rounded-2xl bg-white/75 p-3">
+                <PetIcon className="h-4 w-4 text-[#bb721e]" name="bell" />
 	              <p className="text-xs font-bold text-[#778174]">3일 내</p>
 	              <p className="mt-1 text-lg font-black text-[#1f2922]">{summary.dueSoonCount}개</p>
             </div>
             <div className="rounded-2xl bg-white/75 p-3">
+              <PetIcon className="h-4 w-4 text-[#be4c3c]" name="alert" />
               <p className="text-xs font-bold text-[#778174]">지연</p>
               <p className="mt-1 text-lg font-black text-[#be4c3c]">{summary.overdueCount}개</p>
             </div>
@@ -97,7 +112,10 @@ export default function SchedulePage() {
 	                <div className="grid grid-cols-2 gap-2">
 	                  {categoryOptions.map(([value, label]) => (
 	                    <Pill active={category === value} className="w-full px-2 text-xs" key={value} onClick={() => setCategory(value)}>
+                        <span className="inline-flex items-center gap-1.5">
+                          <PetIcon className="h-3.5 w-3.5" name={scheduleCategoryIcons[value]} />
 	                      {label}
+                        </span>
 	                    </Pill>
 	                  ))}
                 </div>
@@ -150,10 +168,11 @@ export default function SchedulePage() {
               </label>
               {error ? <p className="text-sm font-semibold text-[#be4c3c]">{error}</p> : null}
               <button
-                className="h-12 w-full rounded-2xl bg-[#16804b] text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)]"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#16804b] text-base font-bold text-white shadow-[0_8px_22px_rgba(22,128,75,0.25)]"
                 onClick={saveSchedule}
                 type="button"
               >
+                <PetIcon className="h-5 w-5" name="plus" />
                 일정 저장
               </button>
             </div>
@@ -171,7 +190,8 @@ export default function SchedulePage() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${toneClasses[status.tone]}`}>{status.label}</span>
-                        <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-xs font-bold text-[#667262]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f0f3ed] px-2.5 py-1 text-xs font-bold text-[#667262]">
+                          <PetIcon className="h-3.5 w-3.5" name={scheduleCategoryIcons[schedule.category]} />
                           {scheduleCategoryLabels[schedule.category]}
                         </span>
                       </div>
@@ -181,7 +201,8 @@ export default function SchedulePage() {
                       </p>
                       {schedule.note ? <p className="mt-2 text-sm leading-6 text-[#667262]">{schedule.note}</p> : null}
                     </div>
-                    <button className="shrink-0 text-sm font-bold text-[#16804b]" onClick={() => toggleScheduleDone(schedule.id)} type="button">
+                    <button className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-[#16804b]" onClick={() => toggleScheduleDone(schedule.id)} type="button">
+                      <PetIcon className="h-4 w-4" name="check" />
                       완료
                     </button>
                   </div>
@@ -205,7 +226,10 @@ export default function SchedulePage() {
                 <Card className="p-4 opacity-80" key={schedule.id}>
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold text-[#778174]">{scheduleCategoryLabels[schedule.category]}</p>
+                      <p className="inline-flex items-center gap-1.5 text-xs font-bold text-[#778174]">
+                        <PetIcon className="h-3.5 w-3.5 text-[#16804b]" name={scheduleCategoryIcons[schedule.category]} />
+                        {scheduleCategoryLabels[schedule.category]}
+                      </p>
                       <h2 className="mt-1 text-sm font-black text-[#1f2922]">{schedule.title}</h2>
                     </div>
                     <div className="flex shrink-0 gap-3 text-sm font-bold">

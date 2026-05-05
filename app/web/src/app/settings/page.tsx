@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, SectionHeader } from "@/components/ui";
 import {
@@ -14,11 +16,31 @@ import {
 } from "@/lib/settings";
 import type { NotificationPreferences } from "@/lib/types";
 
+type MenuIconName = ComponentProps<typeof PetIcon>["name"];
+
 const categoryClasses = {
   기록: "bg-[#edf8ed] text-[#16804b]",
   주의: "bg-[#ffe9e6] text-[#be4c3c]",
   일정: "bg-[#eaf2ff] text-[#2e67a7]",
 };
+
+const categoryIcons = {
+  기록: "record",
+  주의: "alert",
+  일정: "schedule",
+} as const satisfies Record<keyof typeof categoryClasses, MenuIconName>;
+
+const dataSummaryItems = [
+  { icon: "profile", label: "프로필" },
+  { icon: "record", label: "저장된 기록" },
+  { icon: "schedule", label: "진행 중 일정" },
+] as const satisfies ReadonlyArray<{ icon: MenuIconName; label: string }>;
+
+const dataLinks = [
+  { href: "/profile", icon: "profile", label: "프로필" },
+  { href: "/timeline", icon: "timeline", label: "기록" },
+  { href: "/schedule", icon: "schedule", label: "일정" },
+] as const satisfies ReadonlyArray<{ href: string; icon: MenuIconName; label: string }>;
 
 const settingPanelClass =
   "rounded-2xl border border-[#cdd8c6] bg-white p-4 shadow-[0_10px_28px_rgba(49,65,44,0.1)]";
@@ -87,7 +109,10 @@ export default function SettingsPage() {
     <AppShell subtitle="알림과 AI 요약 관리" title="설정">
       <div className="space-y-5">
         <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
-          <p className="text-sm font-bold text-[#16804b]">현재 설정</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+            <PetIcon className="h-4 w-4" name="settings" />
+            현재 설정
+          </p>
           <h2 className="mt-1 text-2xl font-black text-[#1f2922]">알림 {summary.enabledNotificationCount}개 켜짐</h2>
           <p className="mt-2 text-sm leading-6 text-[#667262]">{summary.aiInsightLabel} 상태입니다.</p>
         </Card>
@@ -106,12 +131,17 @@ export default function SettingsPage() {
                   type="button"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${categoryClasses[option.category]}`}>
-                        {option.category}
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${categoryClasses[option.category]}`}>
+                        <PetIcon className="h-5 w-5" name={categoryIcons[option.category]} />
                       </span>
-                      <h2 className="mt-3 text-sm font-black text-[#1f2922]">{option.label}</h2>
-                      <p className="mt-1 text-xs font-semibold leading-5 text-[#667262]">{option.detail}</p>
+                      <span className="min-w-0">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${categoryClasses[option.category]}`}>
+                          {option.category}
+                        </span>
+                        <h2 className="mt-3 text-sm font-black text-[#1f2922]">{option.label}</h2>
+                        <p className="mt-1 text-xs font-semibold leading-5 text-[#667262]">{option.detail}</p>
+                      </span>
                     </div>
                     <ToggleMark active={active} />
                   </div>
@@ -130,9 +160,14 @@ export default function SettingsPage() {
             type="button"
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-black text-[#1f2922]">AI 요약과 케어 제안</p>
-                <p className="mt-1 text-sm leading-6 text-[#667262]">홈, 분석, 제안 화면의 해석형 문구를 표시합니다.</p>
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#edf8ed] text-[#16804b]">
+                  <PetIcon className="h-5 w-5" name="sparkle" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-[#1f2922]">AI 요약과 케어 제안</p>
+                  <p className="mt-1 text-sm leading-6 text-[#667262]">홈, 분석, 제안 화면의 해석형 문구를 표시합니다.</p>
+                </div>
               </div>
               <ToggleMark active={settings.aiInsightEnabled} />
             </div>
@@ -144,28 +179,33 @@ export default function SettingsPage() {
           <div className="space-y-3">
             <Card>
               <dl className="space-y-3 text-sm">
-                {[
-                  ["프로필", profile.name],
-                  ["저장된 기록", `${records.length}개`],
-                  ["진행 중 일정", `${activeSchedules}개`],
-                ].map(([label, value]) => (
-                  <div className="flex justify-between gap-4 border-b border-[#edf1e9] pb-3 last:border-0 last:pb-0" key={label}>
-                    <dt className="font-bold text-[#778174]">{label}</dt>
+                {dataSummaryItems.map((item) => {
+                  const value =
+                    item.label === "프로필"
+                      ? profile.name
+                      : item.label === "저장된 기록"
+                        ? `${records.length}개`
+                        : `${activeSchedules}개`;
+
+                  return (
+                  <div className="flex justify-between gap-4 border-b border-[#edf1e9] pb-3 last:border-0 last:pb-0" key={item.label}>
+                    <dt className="inline-flex items-center gap-2 font-bold text-[#778174]">
+                      <PetIcon className="h-4 w-4 text-[#16804b]" name={item.icon} />
+                      {item.label}
+                    </dt>
                     <dd className="text-right font-semibold text-[#263022]">{value}</dd>
                   </div>
-                ))}
+                  );
+                })}
               </dl>
               <div className="mt-4 grid grid-cols-3 gap-2">
-                {[
-                  { href: "/profile", label: "프로필" },
-                  { href: "/timeline", label: "기록" },
-                  { href: "/schedule", label: "일정" },
-                ].map((item) => (
+                {dataLinks.map((item) => (
                   <Link
-                    className="grid h-10 place-items-center rounded-xl border border-[#dce7d7] bg-[#f7fbf4] text-sm font-bold text-[#16804b]"
+                    className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[#dce7d7] bg-[#f7fbf4] text-sm font-bold text-[#16804b]"
                     href={item.href}
                     key={item.href}
                   >
+                    <PetIcon className="h-4 w-4" name={item.icon} />
                     {item.label}
                   </Link>
                 ))}
@@ -174,10 +214,15 @@ export default function SettingsPage() {
 
             <div className={settingPanelClass}>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-black text-[#1f2922]">데이터 내보내기</p>
-                  <p className="mt-1 text-sm leading-6 text-[#667262]">프로필, 기록, 일정, 설정을 JSON 파일로 저장합니다.</p>
-                  {exportStatus ? <p className="mt-2 text-xs font-bold text-[#16804b]">{exportStatus}</p> : null}
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#edf8ed] text-[#16804b]">
+                    <PetIcon className="h-5 w-5" name="record" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-[#1f2922]">데이터 내보내기</p>
+                    <p className="mt-1 text-sm leading-6 text-[#667262]">프로필, 기록, 일정, 설정을 JSON 파일로 저장합니다.</p>
+                    {exportStatus ? <p className="mt-2 text-xs font-bold text-[#16804b]">{exportStatus}</p> : null}
+                  </div>
                 </div>
                 <button
                   className="h-10 shrink-0 rounded-xl bg-[#16804b] px-3 text-sm font-black text-white"
@@ -191,9 +236,14 @@ export default function SettingsPage() {
 
             <div className={settingPanelClass}>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-black text-[#1f2922]">{resetSummary.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-[#667262]">{resetSummary.detail}</p>
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#ffe9e6] text-[#be4c3c]">
+                    <PetIcon className="h-5 w-5" name="alert" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-[#1f2922]">{resetSummary.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-[#667262]">{resetSummary.detail}</p>
+                  </div>
                 </div>
                 <button
                   className="h-10 shrink-0 rounded-xl border border-[#f0c0b8] bg-[#fff4f2] px-3 text-sm font-black text-[#be4c3c]"

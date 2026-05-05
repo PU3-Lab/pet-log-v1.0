@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { AskAiPanel } from "./ask-ai-panel";
 import { usePetLog } from "./pet-log-provider";
 import { PetIcon } from "./pet-icons";
 import { getCareNotifications, getUnreadNotificationCount } from "@/lib/notifications";
@@ -95,6 +96,8 @@ export function AppShell({ title, subtitle, action, bottomAction, children }: Ap
             })}
           </div>
         </nav>
+
+        <AskAiPanel hasBottomAction={!!bottomAction} />
       </div>
     </main>
   );

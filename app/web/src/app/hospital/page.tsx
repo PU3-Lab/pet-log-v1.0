@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
 import { getHospitalConnectSummary, getNearbyAnimalHospitals } from "@/lib/expansion-features";
@@ -41,23 +42,29 @@ export default function HospitalPage() {
     <AppShell subtitle="상담 전 기록을 정리해요" title="병원 연계">
       <div className="space-y-5">
         <Card className="bg-gradient-to-br from-white to-[#eaf2ff]">
-          <p className="text-sm font-bold text-[#2e67a7]">방문 준비</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#2e67a7]">
+            <PetIcon className="h-4 w-4" name="hospital" />
+            방문 준비
+          </p>
           <h2 className="mt-1 text-xl font-black text-[#1f2922]">{summary.title}</h2>
           <p className="mt-2 text-sm leading-6 text-[#667262]">{summary.detail}</p>
         </Card>
 
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#be4c3c]" name="alert" />
             <p className="text-[11px] font-bold text-[#778174]">주의 기록</p>
             <p className="mt-1 text-base font-black text-[#1f2922]">{summary.warningRecords.length}</p>
           </div>
           <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#16804b]" name="check" />
             <p className="text-[11px] font-bold text-[#778174]">체크</p>
             <p className="mt-1 text-base font-black text-[#1f2922]">
               {checkedChecklistCount}/{summary.checklist.length}
             </p>
           </div>
           <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#356aa8]" name="hospital" />
             <p className="text-[11px] font-bold text-[#778174]">병원</p>
             <p className="mt-1 text-base font-black text-[#1f2922]">{hospitalState.selectedHospitalId ? "선택" : "미정"}</p>
           </div>
@@ -144,7 +151,10 @@ export default function HospitalPage() {
                       <p className="text-xs font-bold text-[#16804b]">
                         {index + 1} · {hospital.distanceLabel} · {hospital.etaLabel}
                       </p>
-                      <h2 className="mt-1 text-sm font-black text-[#1f2922]">{hospital.name}</h2>
+                      <h2 className="mt-1 inline-flex items-center gap-1.5 text-sm font-black text-[#1f2922]">
+                        <PetIcon className="h-4 w-4 text-[#16804b]" name="hospital" />
+                        {hospital.name}
+                      </h2>
                       <p className="mt-1 text-xs font-semibold text-[#778174]">
                         {hospital.addressHint} · {hospital.openLabel}
                       </p>
@@ -222,7 +232,7 @@ export default function HospitalPage() {
                   onClick={() => toggleChecklistItem(item)}
                   type="button"
                 >
-                  <span className="mr-1">{hospitalState.checkedChecklistItems.includes(item) ? "✓" : "□"}</span>
+                  <PetIcon className="mr-1 inline h-3.5 w-3.5" name={hospitalState.checkedChecklistItems.includes(item) ? "check" : "record"} />
                   {item}
                 </button>
               ))}
@@ -231,7 +241,10 @@ export default function HospitalPage() {
         </section>
 
         <Card className="bg-[#fffaf0]">
-          <p className="text-sm font-bold text-[#b56d19]">공유 전 확인</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#b56d19]">
+            <PetIcon className="h-4 w-4" name="alert" />
+            공유 전 확인
+          </p>
           <p className="mt-2 text-sm leading-6 text-[#65533a]">{summary.shareNotice}</p>
         </Card>
       </div>

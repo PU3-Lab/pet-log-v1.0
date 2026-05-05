@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, Pill, SectionHeader } from "@/components/ui";
 import { getCareNotifications, getNotificationReadSummary, getNotificationsWithReadState } from "@/lib/notifications";
@@ -17,6 +18,12 @@ const toneClasses: Record<CareNotificationTone, string> = {
   orange: "bg-[#fff2df] text-[#bb721e]",
   red: "bg-[#ffe9e6] text-[#be4c3c]",
   blue: "bg-[#eaf2ff] text-[#2e67a7]",
+};
+
+const notificationCategoryIcons: Record<CareNotificationCategory, "record" | "alert" | "schedule"> = {
+  기록: "record",
+  주의: "alert",
+  일정: "schedule",
 };
 
 export default function NotificationsPage() {
@@ -44,7 +51,10 @@ export default function NotificationsPage() {
 	        <Card className="bg-gradient-to-br from-white to-[#edf8ed]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-bold text-[#16804b]">오늘 확인할 알림</p>
+              <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+                <PetIcon className="h-4 w-4" name="bell" />
+                오늘 확인할 알림
+              </p>
               <h2 className="mt-1 text-2xl font-black text-[#1f2922]">읽지 않음 {readSummary.unreadCount}개</h2>
             </div>
             {readSummary.hasUnread ? (
@@ -62,14 +72,17 @@ export default function NotificationsPage() {
 	          </p>
 	          <div className="mt-4 grid grid-cols-3 gap-2">
 	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+                <PetIcon className="mx-auto h-4 w-4 text-[#16804b]" name="bell" />
 	              <p className="text-[11px] font-bold text-[#778174]">전체</p>
 	              <p className="mt-1 text-base font-black text-[#1f2922]">{readSummary.totalCount}</p>
 	            </div>
 	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+                <PetIcon className="mx-auto h-4 w-4 text-[#be4c3c]" name="alert" />
 	              <p className="text-[11px] font-bold text-[#778174]">읽지 않음</p>
 	              <p className="mt-1 text-base font-black text-[#be4c3c]">{readSummary.unreadCount}</p>
 	            </div>
 	            <div className="rounded-2xl bg-white/80 px-3 py-3 text-center">
+                <PetIcon className="mx-auto h-4 w-4 text-[#356aa8]" name={activeFilter === "전체" ? "more" : notificationCategoryIcons[activeFilter]} />
 	              <p className="text-[11px] font-bold text-[#778174]">분류</p>
 	              <p className="mt-1 truncate text-base font-black text-[#1f2922]">{activeFilter}</p>
 	            </div>
@@ -95,7 +108,7 @@ export default function NotificationsPage() {
                       notification.isRead ? "bg-[#f0f3ed] text-[#7d8879]" : toneClasses[notification.tone]
                     }`}
                   >
-                    {notification.category}
+                    <PetIcon className="h-5 w-5" name={notificationCategoryIcons[notification.category]} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
@@ -124,10 +137,11 @@ export default function NotificationsPage() {
                     </div>
                     <p className="mt-2 text-sm leading-6 text-[#667262]">{notification.detail}</p>
                     <Link
-                      className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#16804b] text-sm font-bold text-white"
+                      className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#16804b] text-sm font-bold text-white"
                       href={notification.actionHref}
                       onClick={() => markNotificationRead(notification.id)}
                     >
+                      <PetIcon className="h-4 w-4" name={notificationCategoryIcons[notification.category]} />
                       {notification.action}
                     </Link>
                   </div>
@@ -144,7 +158,10 @@ export default function NotificationsPage() {
         </section>
 
         <Card className="bg-[#fffaf0]">
-          <p className="text-sm font-bold text-[#b56d19]">안전 안내</p>
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#b56d19]">
+            <PetIcon className="h-4 w-4" name="alert" />
+            안전 안내
+          </p>
           <p className="mt-2 text-sm leading-6 text-[#65533a]">
             알림은 저장된 기록을 바탕으로 한 확인 요청입니다. 증상이 반복되거나 심해지면 병원 상담을 권장합니다.
           </p>

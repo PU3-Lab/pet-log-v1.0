@@ -11,7 +11,7 @@ import { getRecentChange, getRecordStatusLabel, getTodaySummary, type HomeSummar
 import { getCareNotifications } from "@/lib/notifications";
 import { suggestions, todos } from "@/lib/mock-data";
 import { PetIcon } from "@/components/pet-icons";
-import { getChatbotThreads, sendChatbotMessage } from "@/lib/api-client";
+import { sendChatbotMessage } from "@/lib/api-client";
 import type { ChatbotThread } from "@/lib/types";
 
 type SpeechRecognitionEventLike = {
@@ -93,7 +93,7 @@ export default function Home() {
   const [petChatNotice, setPetChatNotice] = useState("");
   const [petChatMessages, setPetChatMessages] = useState<PetChatMessage[]>([]);
   const [isChatbotSending, setIsChatbotSending] = useState(false);
-  const [isChatbotHistoryLoading, setIsChatbotHistoryLoading] = useState(false);
+  const [isChatbotHistoryLoading] = useState(false);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [isPetVoiceListening, setIsPetVoiceListening] = useState(false);
   const [closingPanel, setClosingPanel] = useState<"chatbot" | "pet" | null>(null);
@@ -142,31 +142,11 @@ export default function Home() {
     return () => cancelAnimationFrame(frameId);
   }, [isPetChatOpen, petChatMessageCount, petChatNotice]);
 
-  async function loadChatbotHistory() {
-    setIsChatbotHistoryLoading(true);
-    try {
-      const response = await getChatbotThreads();
-      setChatbotThread(response.threads[0] ?? null);
-    } catch {
-      setChatbotNotice("최근 대화를 불러오지 못했습니다.");
-    } finally {
-      setIsChatbotHistoryLoading(false);
-    }
-  }
-
   function clearPanelCloseTimer() {
     if (panelCloseTimerRef.current) {
       clearTimeout(panelCloseTimerRef.current);
       panelCloseTimerRef.current = null;
     }
-  }
-
-  function openChatbot() {
-    clearPanelCloseTimer();
-    setClosingPanel(null);
-    setIsPetChatOpen(false);
-    setIsChatbotOpen(true);
-    void loadChatbotHistory();
   }
 
   function closeChatbot() {
@@ -517,20 +497,6 @@ export default function Home() {
           </Card>
         ) : null}
 
-        {!isChatbotOpen && !isPetChatOpen ? (
-          <div className="flex justify-end min-[361px]:hidden">
-            <button
-              aria-haspopup="dialog"
-              className="pet-log-float-soft pet-log-pressable inline-flex h-12 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.24)]"
-              onClick={openChatbot}
-              type="button"
-            >
-              <PetIcon className="h-5 w-5" name="question" />
-              물어보기
-            </button>
-          </div>
-        ) : null}
-
         <section>
           <SectionHeader
             action={
@@ -666,18 +632,6 @@ export default function Home() {
           </div>
         </section>
       </div>
-
-      {!isChatbotOpen && !isPetChatOpen ? (
-        <button
-          aria-haspopup="dialog"
-          className="pet-log-float-soft pet-log-pressable absolute bottom-20 right-5 z-30 hidden h-14 items-center gap-2 rounded-full bg-[#16804b] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(22,128,75,0.32)] min-[361px]:inline-flex"
-          onClick={openChatbot}
-          type="button"
-        >
-          <PetIcon className="h-5 w-5" name="question" />
-          물어보기
-        </button>
-      ) : null}
 
       {isPetChatOpen ? (
         <div
