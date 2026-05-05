@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, MiniLineChart, Pill, SectionHeader } from "@/components/ui";
 import { metrics } from "@/lib/mock-data";
@@ -233,14 +234,20 @@ export default function ProfilePage() {
         {isEditing ? (
           <Card className="border-[#b9dbc5] bg-[#fbfffb]">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-base font-black text-[#1f2922]">프로필 편집</h2>
+              <h2 className="inline-flex items-center gap-1.5 text-base font-black text-[#1f2922]">
+                <PetIcon className="h-4 w-4 text-[#16804b]" name="profile" />
+                프로필 편집
+              </h2>
               <button className="text-sm font-bold text-[#667262]" onClick={cancelEdit} type="button">
                 닫기
               </button>
             </div>
             <div className="space-y-3">
               <div className="rounded-2xl border border-[#dfe8d9] bg-white p-3">
-                <span className="text-xs font-bold text-[#778174]">프로필 사진</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#778174]">
+                  <PetIcon className="h-3.5 w-3.5 text-[#16804b]" name="profile" />
+                  프로필 사진
+                </span>
                 <div className="mt-3 flex items-center gap-3">
                   <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-3xl bg-[#eef5e9] text-2xl font-black text-[#16804b]">
                     {draft.photoDataUrl ? (
@@ -264,6 +271,7 @@ export default function ProfilePage() {
                         onClick={() => uploadInputRef.current?.click()}
                         type="button"
                       >
+                        <PetIcon className="mr-1 inline h-4 w-4" name="plus" />
                         업로드
                       </button>
                       <button
@@ -271,6 +279,7 @@ export default function ProfilePage() {
                         onClick={openCamera}
                         type="button"
                       >
+                        <PetIcon className="mr-1 inline h-4 w-4" name="record" />
                         촬영
                       </button>
                     </div>
@@ -280,6 +289,7 @@ export default function ProfilePage() {
                         onClick={() => setDraft((current) => ({ ...current, photoDataUrl: undefined }))}
                         type="button"
                       >
+                        <PetIcon className="mr-1 inline h-4 w-4" name="alert" />
                         사진 삭제
                       </button>
                     ) : null}
@@ -323,6 +333,7 @@ export default function ProfilePage() {
                       onClick={stopCamera}
                       type="button"
                     >
+                      <PetIcon className="mr-1 inline h-4 w-4" name="close" />
                       닫기
                     </button>
                     <button
@@ -331,6 +342,7 @@ export default function ProfilePage() {
                       onClick={captureCameraPhoto}
                       type="button"
                     >
+                      <PetIcon className="mr-1 inline h-4 w-4" name="record" />
                       사진 찍기
                     </button>
                   </div>
@@ -346,7 +358,10 @@ export default function ProfilePage() {
                 ["성격", "personality"],
               ].map(([label, field]) => (
                 <label className="block" key={field}>
-                  <span className="text-xs font-bold text-[#778174]">{label}</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#778174]">
+                    <PetIcon className="h-3.5 w-3.5 text-[#16804b]" name={field === "weight" ? "activity" : field === "birthday" ? "schedule" : field === "personality" ? "heart" : "profile"} />
+                    {label}
+                  </span>
                   <input
                     className="mt-1 h-11 w-full rounded-xl border border-[#dde6d6] bg-white px-3 text-sm font-semibold text-[#263022] outline-none focus:border-[#16804b] focus:ring-2 focus:ring-[#16804b]/15"
                     onChange={(event) => updateDraft(field as keyof PetProfile, event.target.value)}
@@ -355,7 +370,10 @@ export default function ProfilePage() {
                 </label>
               ))}
               <label className="block">
-                <span className="text-xs font-bold text-[#778174]">건강 메모</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#778174]">
+                  <PetIcon className="h-3.5 w-3.5 text-[#16804b]" name="medical" />
+                  건강 메모
+                </span>
                 <textarea
                   className="mt-1 min-h-28 w-full resize-none rounded-xl border border-[#dde6d6] bg-white p-3 text-sm leading-6 text-[#263022] outline-none focus:border-[#16804b] focus:ring-2 focus:ring-[#16804b]/15"
                   onChange={(event) => {
@@ -374,6 +392,7 @@ export default function ProfilePage() {
                 onClick={saveProfile}
                 type="button"
               >
+                <PetIcon className="mr-1 inline h-5 w-5" name="check" />
                 {isSaving ? "저장 중" : "프로필 저장"}
               </button>
             </div>
@@ -404,7 +423,8 @@ export default function ProfilePage() {
                         {profile.age} · {profile.breed} · {profile.sex}
                       </p>
                     </div>
-                    <button className="inline-flex h-8 shrink-0 items-center rounded-full px-2 text-sm font-bold text-[#16804b]" onClick={startEdit} type="button">
+                    <button className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 text-sm font-bold text-[#16804b]" onClick={startEdit} type="button">
+                      <PetIcon className="h-4 w-4" name="record" />
                       편집
                     </button>
                   </div>
@@ -426,7 +446,10 @@ export default function ProfilePage() {
                     ["생활 정보", profile.notes[2] ?? profile.notes[1] ?? "등록된 생활 정보 없음"],
                   ].map(([label, value]) => (
                     <div className="flex justify-between gap-4 border-b border-[#edf1e9] pb-3 last:border-0 last:pb-0" key={label}>
-                      <dt className="font-bold text-[#778174]">{label}</dt>
+                      <dt className="inline-flex items-center gap-1.5 font-bold text-[#778174]">
+                        <PetIcon className="h-3.5 w-3.5 text-[#16804b]" name={label === "성격" ? "heart" : label === "특이사항" ? "medical" : "home"} />
+                        {label}
+                      </dt>
                       <dd className="text-right font-semibold text-[#263022]">{value}</dd>
                     </div>
                   ))}
@@ -439,7 +462,10 @@ export default function ProfilePage() {
               <Card>
                 <div className="mb-2 flex items-end justify-between">
                   <div>
-                    <p className="text-sm font-bold text-[#16804b]">{profile.weight}</p>
+                    <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#16804b]">
+                      <PetIcon className="h-4 w-4" name="activity" />
+                      {profile.weight}
+                    </p>
                     <h2 className="text-base font-black text-[#1f2922]">최근 7회 기록</h2>
                   </div>
                   <p className="text-xs font-bold text-[#7b8576]">{weightMetric.trend}</p>
@@ -453,11 +479,15 @@ export default function ProfilePage() {
               <div className="space-y-3">
                 {profile.notes.map((note) => (
                   <Card className="p-4" key={note}>
-                    <p className="text-sm font-semibold text-[#3e493b]">{note}</p>
+                    <p className="inline-flex items-start gap-2 text-sm font-semibold text-[#3e493b]">
+                      <PetIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#16804b]" name="medical" />
+                      {note}
+                    </p>
                   </Card>
                 ))}
                 {profile.notes.length === 0 ? (
                   <Card className="p-5 text-center">
+                    <PetIcon className="mx-auto h-6 w-6 text-[#9aa494]" name="medical" />
                     <p className="text-sm font-bold text-[#1f2922]">등록된 건강 메모가 없습니다.</p>
                   </Card>
                 ) : null}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { Card, Pill, SectionHeader } from "@/components/ui";
 import { createCommunityComment, createCommunityPost, getCommunityPostDetail, getCommunityPosts } from "@/lib/community";
 import { communityBoards, communityComments, communityPosts } from "@/lib/mock-data";
@@ -15,6 +16,20 @@ const boardStyles: Record<CommunityBoard, { marker: string; text: string; bg: st
   자유게시판: { marker: "bg-[#16804b]", text: "text-[#16804b]", bg: "bg-[#edf8ed]" },
   "행동 고민": { marker: "bg-[#7256b8]", text: "text-[#7256b8]", bg: "bg-[#f5f1ff]" },
   후기: { marker: "bg-[#356aa8]", text: "text-[#356aa8]", bg: "bg-[#f6f9ff]" },
+};
+
+const boardIcons: Record<CommunityBoard, "heart" | "shopping" | "community" | "behavior" | "check"> = {
+  유기동물: "heart",
+  "용품 나눔": "shopping",
+  자유게시판: "community",
+  "행동 고민": "behavior",
+  후기: "check",
+};
+
+const feedIcons: Record<CommunityFeed, "sparkle" | "timeline" | "home"> = {
+  인기글: "sparkle",
+  최신글: "timeline",
+  "내 주변": "home",
 };
 
 export default function CommunityPage() {
@@ -75,7 +90,10 @@ export default function CommunityPage() {
         <Card className="bg-gradient-to-br from-white to-[#f6f9ff]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-bold text-[#356aa8]">동네 보호자 피드</p>
+              <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[#356aa8]">
+                <PetIcon className="h-4 w-4" name="community" />
+                동네 보호자 피드
+              </p>
               <h2 className="mt-1 text-lg font-black text-[#1f2922]">
                 {activeBoard ? `${activeBoard} 중심으로 보기` : "필요한 게시판을 빠르게 찾기"}
               </h2>
@@ -84,10 +102,11 @@ export default function CommunityPage() {
               </p>
             </div>
             <button
-              className="h-10 shrink-0 rounded-xl bg-[#16804b] px-3 text-sm font-black text-white"
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[#16804b] px-3 text-sm font-black text-white"
               onClick={() => setIsComposerOpen((current) => !current)}
               type="button"
             >
+              <PetIcon className="h-4 w-4" name={isComposerOpen ? "close" : "plus"} />
               {isComposerOpen ? "닫기" : "글쓰기"}
             </button>
           </div>
@@ -98,7 +117,10 @@ export default function CommunityPage() {
             <div className="grid grid-cols-2 gap-2">
               {communityBoards.map((board) => (
                 <Pill active={draftBoard === board} className="w-full px-2 text-xs" key={board} onClick={() => setDraftBoard(board)}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <PetIcon className="h-3.5 w-3.5" name={boardIcons[board]} />
                   {board}
+                  </span>
                 </Pill>
               ))}
             </div>
@@ -120,6 +142,7 @@ export default function CommunityPage() {
               onClick={submitPost}
               type="button"
             >
+              <PetIcon className="mr-1 inline h-4 w-4" name="send" />
               게시하기
             </button>
           </Card>
@@ -141,7 +164,9 @@ export default function CommunityPage() {
                 type="button"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${active ? "bg-white" : style.marker}`} />
+                  <span className={`grid h-8 w-8 place-items-center rounded-xl ${active ? "bg-white/15 text-white" : `${style.bg} ${style.text}`}`}>
+                    <PetIcon className="h-4 w-4" name={boardIcons[item]} />
+                  </span>
                   <span className={`text-[11px] font-black ${active ? "text-white/85" : style.text}`}>{postCount}개</span>
                 </div>
                 <p className={`mt-3 break-keep text-sm font-black ${active ? "text-white" : "text-[#1f2922]"}`}>{item}</p>
@@ -153,7 +178,10 @@ export default function CommunityPage() {
         <div className="grid grid-cols-3 gap-2">
           {feedFilters.map((filter) => (
             <Pill active={activeFeed === filter} className="w-full px-2 text-xs" key={filter} onClick={() => setActiveFeed(filter)}>
+              <span className="inline-flex items-center gap-1.5">
+                <PetIcon className="h-3.5 w-3.5" name={feedIcons[filter]} />
               {filter}
+              </span>
             </Pill>
           ))}
         </div>
@@ -188,7 +216,10 @@ export default function CommunityPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#16804b]">{post.board}</p>
+                    <p className="inline-flex items-center gap-1.5 text-xs font-bold text-[#16804b]">
+                      <PetIcon className="h-3.5 w-3.5" name={boardIcons[post.board]} />
+                      {post.board}
+                    </p>
                     <h2 className="mt-2 text-sm font-black leading-5 text-[#1f2922]">{post.title}</h2>
                   </div>
                   {savedPostIds.includes(post.id) ? (
@@ -225,12 +256,13 @@ export default function CommunityPage() {
                 </div>
                 <button
                   aria-pressed={savedPostIds.includes(selectedDetail.id)}
-                  className={`h-10 shrink-0 rounded-xl px-3 text-sm font-black ${
+                  className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-black ${
                     savedPostIds.includes(selectedDetail.id) ? "bg-[#fff2dd] text-[#a4651a]" : "bg-[#edf8ed] text-[#16804b]"
                   }`}
                   onClick={() => toggleSavedPost(selectedDetail.id)}
                   type="button"
                 >
+                  <PetIcon className="h-4 w-4" name={savedPostIds.includes(selectedDetail.id) ? "check" : "heart"} />
                   {savedPostIds.includes(selectedDetail.id) ? "저장됨" : "저장"}
                 </button>
               </div>
@@ -261,11 +293,12 @@ export default function CommunityPage() {
                 />
                 <div className="mt-2 flex justify-end">
                   <button
-                    className="h-10 rounded-xl bg-[#16804b] px-4 text-sm font-black text-white disabled:bg-[#cfd8ca]"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#16804b] px-4 text-sm font-black text-white disabled:bg-[#cfd8ca]"
                     disabled={!commentDraft.trim()}
                     onClick={addComment}
                     type="button"
                   >
+                    <PetIcon className="h-4 w-4" name="send" />
                     댓글 등록
                   </button>
                 </div>
@@ -274,7 +307,10 @@ export default function CommunityPage() {
               {selectedDetail.commentItems.map((comment) => (
                 <Card className="p-3" key={comment.id}>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-black text-[#1f2922]">{comment.authorName}</p>
+                    <p className="inline-flex items-center gap-1.5 text-sm font-black text-[#1f2922]">
+                      <PetIcon className="h-4 w-4 text-[#16804b]" name="profile" />
+                      {comment.authorName}
+                    </p>
                     <p className="text-xs font-semibold text-[#9aa393]">{comment.createdAt}</p>
                   </div>
                   <p className="mt-2 text-sm font-semibold leading-6 text-[#5c6758]">{comment.body}</p>

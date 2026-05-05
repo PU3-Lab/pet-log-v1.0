@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, Pill, SectionHeader } from "@/components/ui";
 import { categoryLabels } from "@/lib/mock-data";
@@ -16,6 +17,15 @@ const timelineFilters: { label: string; value: TimelineFilter }[] = [
   { label: "병원/약", value: "medical" },
   { label: "행동", value: "behavior" },
 ];
+
+const timelineFilterIcons: Record<TimelineFilter, "timeline" | RecordCategory> = {
+  all: "timeline",
+  meal: "meal",
+  walk: "walk",
+  stool: "stool",
+  medical: "medical",
+  behavior: "behavior",
+};
 
 const statusText: Record<RecordStatus, string> = {
   normal: "text-[#16804b]",
@@ -110,10 +120,13 @@ export default function TimelinePage() {
             onClick={() => moveDate(1)}
             type="button"
           >
-            ‹
+            <PetIcon className="mx-auto h-4 w-4" name="back" />
           </button>
           <div className="text-center">
-            <p className="text-xs font-semibold text-[#7c8777]">{dateSummary.noticeLabel}</p>
+            <p className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#7c8777]">
+              <PetIcon className="h-3.5 w-3.5 text-[#16804b]" name="timeline" />
+              {dateSummary.noticeLabel}
+            </p>
             <p className="text-base font-black text-[#1f2922]">{activeDate ?? "기록 없음"}</p>
             <p className="mt-1 text-xs font-bold text-[#16804b]">{dateSummary.totalCount}개 기록</p>
           </div>
@@ -124,20 +137,23 @@ export default function TimelinePage() {
             onClick={() => moveDate(-1)}
             type="button"
           >
-            ›
+            <PetIcon className="mx-auto h-4 w-4 rotate-180" name="back" />
           </button>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-2xl border border-[#dfe6d9] bg-white px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#16804b]" name="record" />
             <p className="text-[11px] font-bold text-[#778174]">전체</p>
             <p className="mt-1 text-base font-black text-[#1f2922]">{dateSummary.totalCount}</p>
           </div>
           <div className="rounded-2xl border border-[#f1d9af] bg-[#fffaf0] px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#bb721e]" name="activity" />
             <p className="text-[11px] font-bold text-[#9a7954]">확인</p>
             <p className="mt-1 text-base font-black text-[#bb721e]">{dateSummary.noticeCount}</p>
           </div>
           <div className="rounded-2xl border border-[#f0cbc5] bg-[#fff7f5] px-3 py-3 text-center">
+            <PetIcon className="mx-auto h-4 w-4 text-[#be4c3c]" name="alert" />
             <p className="text-[11px] font-bold text-[#9a6b64]">주의</p>
             <p className="mt-1 text-base font-black text-[#be4c3c]">{dateSummary.alertCount}</p>
           </div>
@@ -145,6 +161,10 @@ export default function TimelinePage() {
 
         <label className="block">
           <span className="sr-only">기록 검색</span>
+          <span className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#778174]">
+            <PetIcon className="h-3.5 w-3.5 text-[#16804b]" name="question" />
+            기록 검색
+          </span>
           <input
             className="h-12 w-full rounded-2xl border border-[#dfe6d9] bg-white px-4 text-sm font-semibold text-[#263022] outline-none focus:border-[#16804b] focus:ring-2 focus:ring-[#16804b]/15"
             onChange={(event) => {
@@ -167,7 +187,10 @@ export default function TimelinePage() {
                 setSelectedRecordId(null);
               }}
             >
+              <span className="inline-flex items-center gap-1.5">
+                <PetIcon className="h-3.5 w-3.5" name={timelineFilterIcons[filter.value]} />
               {filter.label}
+              </span>
             </Pill>
           ))}
         </div>
@@ -178,7 +201,9 @@ export default function TimelinePage() {
             <div className="relative space-y-3 before:absolute before:bottom-4 before:left-[21px] before:top-4 before:w-px before:bg-[#dfe8d9]">
               {filteredRecords.map((record) => (
                 <Card className="relative ml-8 p-4" key={record.id}>
-                  <span className="absolute -left-[38px] top-5 grid h-8 w-8 place-items-center rounded-full border-4 border-[#f8faf5] bg-[#eaf5e8] text-xs font-black text-[#16804b]" />
+                  <span className="absolute -left-[38px] top-5 grid h-8 w-8 place-items-center rounded-full border-4 border-[#f8faf5] bg-[#eaf5e8] text-xs font-black text-[#16804b]">
+                    <PetIcon className="h-4 w-4" name={record.category} />
+                  </span>
                   {editingId === record.id ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
@@ -204,7 +229,10 @@ export default function TimelinePage() {
                               key={filter.value}
                               onClick={() => setEditingCategory(filter.value)}
                             >
+                              <span className="inline-flex items-center gap-1.5">
+                                <PetIcon className="h-3.5 w-3.5" name={timelineFilterIcons[filter.value]} />
                               {filter.label}
+                              </span>
                             </Pill>
                           ))}
                       </div>
@@ -215,6 +243,7 @@ export default function TimelinePage() {
                           onClick={cancelEdit}
                           type="button"
                         >
+                          <PetIcon className="mr-1 inline h-4 w-4" name="close" />
                           취소
                         </button>
                         <button
@@ -222,6 +251,7 @@ export default function TimelinePage() {
                           onClick={() => saveEdit(record.id)}
                           type="button"
                         >
+                          <PetIcon className="mr-1 inline h-4 w-4" name="check" />
                           저장
                         </button>
                       </div>
@@ -244,7 +274,10 @@ export default function TimelinePage() {
                       {selectedRecordId === record.id && selectedDetail ? (
                         <div className="rounded-2xl border border-[#dfe8d9] bg-[#fbfdf8] p-3">
                           <div className="flex items-center gap-2">
-                            <span className={`text-xs font-black ${statusText[record.status]}`}>{selectedDetail.statusLabel}</span>
+                            <span className={`inline-flex items-center gap-1.5 text-xs font-black ${statusText[record.status]}`}>
+                              <PetIcon className="h-3.5 w-3.5" name={record.status === "alert" ? "alert" : record.status === "notice" ? "activity" : "check"} />
+                              {selectedDetail.statusLabel}
+                            </span>
                             <span className="text-xs font-bold text-[#8a9286]">{selectedDetail.categoryLabel}</span>
                           </div>
                           <p className="mt-2 text-sm leading-6 text-[#4d584a]">{selectedDetail.statusDetail}</p>
@@ -271,6 +304,7 @@ export default function TimelinePage() {
                           onClick={() => startEdit(record)}
                           type="button"
                         >
+                          <PetIcon className="mr-1 inline h-4 w-4" name="record" />
                           수정
                         </button>
                         <button
@@ -278,6 +312,7 @@ export default function TimelinePage() {
                           onClick={() => removeRecord(record.id)}
                           type="button"
                         >
+                          <PetIcon className="mr-1 inline h-4 w-4" name="alert" />
                           삭제
                         </button>
                       </div>
@@ -288,6 +323,7 @@ export default function TimelinePage() {
             </div>
           ) : (
             <Card className="p-5 text-center">
+              <PetIcon className="mx-auto h-6 w-6 text-[#9aa494]" name="timeline" />
               <h3 className="text-sm font-bold text-[#1f2922]">표시할 기록이 없습니다.</h3>
               <p className="mt-2 text-sm leading-6 text-[#667262]">
                 선택한 날짜, 검색어, 필터에 맞는 기록이 없습니다. 조건을 바꾸거나 새 기록을 남겨보세요.
