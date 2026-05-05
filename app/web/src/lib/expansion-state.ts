@@ -26,6 +26,10 @@ export type HospitalState = {
   symptomMemo: string;
   locationStatus: HospitalLocationStatus;
   selectedHospitalId?: string;
+  currentLocation?: {
+    lat: number;
+    lng: number;
+  };
   checkedChecklistItems: string[];
 };
 
@@ -53,6 +57,7 @@ export const defaultExpansionState: ExpansionState = {
     symptomMemo: "",
     locationStatus: "idle",
     selectedHospitalId: undefined,
+    currentLocation: undefined,
     checkedChecklistItems: [],
   },
   shopping: {
@@ -99,6 +104,7 @@ export function normalizeExpansionState(value: unknown): ExpansionState {
       symptomMemo: typeof hospital.symptomMemo === "string" ? hospital.symptomMemo : "",
       locationStatus: isHospitalLocationStatus(hospital.locationStatus) ? hospital.locationStatus : "idle",
       selectedHospitalId: typeof hospital.selectedHospitalId === "string" ? hospital.selectedHospitalId : undefined,
+      currentLocation: isMapCoordinate(hospital.currentLocation) ? hospital.currentLocation : undefined,
       checkedChecklistItems: Array.isArray(hospital.checkedChecklistItems)
         ? hospital.checkedChecklistItems.filter((item): item is string => typeof item === "string")
         : [],
@@ -130,6 +136,7 @@ export function isExpansionState(value: unknown): value is ExpansionState {
     state.hospital?.symptomMemo === normalized.hospital.symptomMemo &&
     state.hospital?.locationStatus === normalized.hospital.locationStatus &&
     state.hospital?.selectedHospitalId === normalized.hospital.selectedHospitalId &&
+    areMapCoordinatesEqual(state.hospital?.currentLocation, normalized.hospital.currentLocation) &&
     areStringArraysEqual(state.hospital?.checkedChecklistItems, normalized.hospital.checkedChecklistItems) &&
     state.shopping?.activeFilter === normalized.shopping.activeFilter &&
     state.shopping?.expandedReasonId === normalized.shopping.expandedReasonId &&
@@ -143,6 +150,24 @@ function isSharedCareRole(value: unknown): value is SharedCareRole {
 
 function isHospitalLocationStatus(value: unknown): value is HospitalLocationStatus {
   return hospitalLocationStatuses.includes(value as HospitalLocationStatus);
+}
+
+function isMapCoordinate(value: unknown): value is { lat: number; lng: number } {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const coordinate = value as { lat?: unknown; lng?: unknown };
+  return (
+    typeof coordinate.lat === "number" &&
+    Number.isFinite(coordinate.lat) &&
+    coordinate.lat >= -90 &&
+    coordinate.lat <= 90 &&
+    typeof coordinate.lng === "number" &&
+    Number.isFinite(coordinate.lng) &&
+    coordinate.lng >= -180 &&
+    coordinate.lng <= 180
+  );
 }
 
 function isShoppingFilter(value: unknown): value is ShoppingFilter {
@@ -160,6 +185,13 @@ function isPreparedInvite(value: unknown): value is PreparedSharedCareInvite {
 
 function areStringArraysEqual(left: unknown, right: string[]) {
   return Array.isArray(left) && left.length === right.length && left.every((item, index) => item === right[index]);
+}
+
+function areMapCoordinatesEqual(left: unknown, right: { lat: number; lng: number } | undefined) {
+  if (right === undefined) {
+    return left === undefined;
+  }
+  return isMapCoordinate(left) && left.lat === right.lat && left.lng === right.lng;
 }
 
 function areInvitesEqual(left: unknown, right: PreparedSharedCareInvite[]) {

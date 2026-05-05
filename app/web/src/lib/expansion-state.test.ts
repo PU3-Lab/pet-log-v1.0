@@ -9,6 +9,7 @@ import {
 
 assert.equal(defaultExpansionState.sharedCare.selectedRole, "공동 보호자");
 assert.equal(defaultExpansionState.hospital.symptomMemo, "");
+assert.equal(defaultExpansionState.hospital.currentLocation, undefined);
 assert.deepEqual(defaultExpansionState.shopping.savedRecommendationIds, []);
 
 const invite = createPreparedInvite(" family@example.com ", "기록 담당", 1234);
@@ -34,6 +35,7 @@ assert.equal(
       symptomMemo: "배변 상태가 평소와 다름",
       locationStatus: "blocked",
       selectedHospitalId: "care-vet",
+      currentLocation: { lat: 37.5665, lng: 126.978 },
       checkedChecklistItems: ["최근 식사량 변화"],
     },
     shopping: {
@@ -53,5 +55,22 @@ const normalized = normalizeExpansionState({
 
 assert.equal(normalized.sharedCare.selectedRole, "공동 보호자");
 assert.equal(normalized.hospital.locationStatus, "ready");
+assert.equal(normalized.hospital.currentLocation, undefined);
 assert.equal(normalized.shopping.activeFilter, "전체");
 assert.deepEqual(normalized.shopping.savedRecommendationIds, ["health-basic"]);
+
+const normalizedWithLocation = normalizeExpansionState({
+  hospital: {
+    locationStatus: "ready",
+    currentLocation: { lat: 37.5665, lng: 126.978 },
+  },
+});
+assert.deepEqual(normalizedWithLocation.hospital.currentLocation, { lat: 37.5665, lng: 126.978 });
+
+const normalizedWithInvalidLocation = normalizeExpansionState({
+  hospital: {
+    locationStatus: "ready",
+    currentLocation: { lat: 120, lng: "invalid" },
+  },
+});
+assert.equal(normalizedWithInvalidLocation.hospital.currentLocation, undefined);

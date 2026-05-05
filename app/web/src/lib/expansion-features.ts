@@ -35,6 +35,11 @@ export type MapPosition = {
   y: number;
 };
 
+export type MapCoordinate = {
+  lat: number;
+  lng: number;
+};
+
 export type NearbyAnimalHospital = {
   id: string;
   name: string;
@@ -44,6 +49,7 @@ export type NearbyAnimalHospital = {
   openLabel: string;
   tags: string[];
   mapPosition: MapPosition;
+  mapCoordinate: MapCoordinate;
 };
 
 export type ShoppingRecommendation = {
@@ -67,6 +73,7 @@ const nearbyAnimalHospitals: Array<Omit<NearbyAnimalHospital, "distanceLabel"> &
     openLabel: "진료 중",
     tags: ["예방접종", "건강검진"],
     mapPosition: { x: 66, y: 32 },
+    mapCoordinate: { lat: 37.5687, lng: 126.9823 },
   },
   {
     id: "night-vet",
@@ -77,6 +84,7 @@ const nearbyAnimalHospitals: Array<Omit<NearbyAnimalHospital, "distanceLabel"> &
     openLabel: "야간 운영",
     tags: ["야간 상담", "응급"],
     mapPosition: { x: 28, y: 58 },
+    mapCoordinate: { lat: 37.5644, lng: 126.9758 },
   },
   {
     id: "skin-vet",
@@ -87,6 +95,7 @@ const nearbyAnimalHospitals: Array<Omit<NearbyAnimalHospital, "distanceLabel"> &
     openLabel: "예약 권장",
     tags: ["피부", "치과"],
     mapPosition: { x: 78, y: 70 },
+    mapCoordinate: { lat: 37.5626, lng: 126.9842 },
   },
   {
     id: "small-vet",
@@ -97,6 +106,7 @@ const nearbyAnimalHospitals: Array<Omit<NearbyAnimalHospital, "distanceLabel"> &
     openLabel: "진료 중",
     tags: ["소형견", "행동 상담"],
     mapPosition: { x: 42, y: 24 },
+    mapCoordinate: { lat: 37.5702, lng: 126.9779 },
   },
 ];
 
@@ -181,6 +191,7 @@ export function getNearbyAnimalHospitals(hasPreciseLocation: boolean): NearbyAni
     openLabel: hospital.openLabel,
     tags: hospital.tags,
     mapPosition: hospital.mapPosition,
+    mapCoordinate: hospital.mapCoordinate,
   }));
 }
 

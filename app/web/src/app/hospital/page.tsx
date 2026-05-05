@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { AppShell } from "@/components/app-shell";
+import { GoogleHospitalMap } from "@/components/google-hospital-map";
 import { PetIcon } from "@/components/pet-icons";
 import { usePetLog } from "@/components/pet-log-provider";
 import { Card, CategoryBadge, SectionHeader } from "@/components/ui";
@@ -16,6 +17,10 @@ export default function HospitalPage() {
   );
   const nearbyHospitals = useMemo(() => getNearbyAnimalHospitals(hospitalState.locationStatus === "ready"), [hospitalState.locationStatus]);
   const checkedChecklistCount = hospitalState.checkedChecklistItems.length;
+  const selectHospital = useCallback(
+    (selectedHospitalId: string) => updateHospitalState({ selectedHospitalId }),
+    [updateHospitalState],
+  );
 
   function requestNearbyLocation() {
     if (!("geolocation" in navigator)) {
@@ -25,8 +30,15 @@ export default function HospitalPage() {
 
     updateHospitalState({ locationStatus: "loading" });
     navigator.geolocation.getCurrentPosition(
-      () => updateHospitalState({ locationStatus: "ready" }),
-      () => updateHospitalState({ locationStatus: "blocked" }),
+      (position) =>
+        updateHospitalState({
+          currentLocation: {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          },
+          locationStatus: "ready",
+        }),
+      () => updateHospitalState({ currentLocation: undefined, locationStatus: "blocked" }),
       { enableHighAccuracy: false, maximumAge: 300000, timeout: 5000 },
     );
   }
@@ -105,36 +117,13 @@ export default function HospitalPage() {
             title="근처 동물병원"
           />
           <Card>
-            <div className="relative h-52 overflow-hidden rounded-2xl border border-[#dce6d4] bg-[#edf4e9]">
-              <div className="absolute left-0 top-1/3 h-px w-full bg-white/80" />
-              <div className="absolute left-0 top-2/3 h-px w-full bg-white/80" />
-              <div className="absolute left-1/3 top-0 h-full w-px bg-white/80" />
-              <div className="absolute left-2/3 top-0 h-full w-px bg-white/80" />
-              <div className="absolute -left-10 top-16 h-16 w-72 rotate-[-18deg] rounded-full bg-[#d8e7d0]" />
-              <div className="absolute -right-12 bottom-10 h-14 w-64 rotate-[28deg] rounded-full bg-[#d7e4f5]" />
-              <div className="absolute left-1/2 top-1/2 z-10 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-4 border-white bg-[#16804b] text-xs font-black text-white shadow-lg">
-                나
-              </div>
-              {nearbyHospitals.map((hospital, index) => (
-                <div
-                  className="absolute z-20 grid h-8 w-8 -translate-x-1/2 -translate-y-full place-items-center rounded-full border-2 border-white bg-[#be4c3c] text-xs font-black text-white shadow-lg"
-                  key={hospital.id}
-                  style={{ left: `${hospital.mapPosition.x}%`, top: `${hospital.mapPosition.y}%` }}
-                  title={hospital.name}
-                >
-                  {index + 1}
-                </div>
-              ))}
-              <div className="absolute bottom-3 left-3 right-3 z-30 rounded-2xl bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
-                <p className="text-xs font-bold text-[#1f2922]">
-                  {hospitalState.locationStatus === "ready"
-                    ? "현재 위치 기준 가까운 병원 후보입니다."
-                    : hospitalState.locationStatus === "blocked"
-                      ? "위치 권한이 없어 예상 거리로 표시합니다."
-                      : "위치 권한을 허용하면 거리 표시를 더 명확히 보여줍니다."}
-                </p>
-              </div>
-            </div>
+            <GoogleHospitalMap
+              currentLocation={hospitalState.currentLocation}
+              hospitals={nearbyHospitals}
+              locationStatus={hospitalState.locationStatus}
+              onSelectHospital={selectHospital}
+              selectedHospitalId={hospitalState.selectedHospitalId}
+            />
 
             <div className="mt-4 space-y-3">
               {nearbyHospitals.map((hospital, index) => (
@@ -143,7 +132,7 @@ export default function HospitalPage() {
                     hospitalState.selectedHospitalId === hospital.id ? "border-[#16804b] bg-[#f4fbef]" : "border-[#e0e6da] bg-[#fbfdf8]"
                   }`}
                   key={hospital.id}
-                  onClick={() => updateHospitalState({ selectedHospitalId: hospital.id })}
+                  onClick={() => selectHospital(hospital.id)}
                   type="button"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -174,7 +163,7 @@ export default function HospitalPage() {
               ))}
             </div>
             <p className="mt-3 text-xs font-semibold leading-5 text-[#778174]">
-              현재 병원 위치는 MVP 목업 데이터입니다. 실제 주변 검색과 길찾기는 지도 API 연결 후 제공합니다.
+              병원 후보는 MVP 목업 데이터입니다. 구글맵 키가 설정되면 앱 안의 지도 위 마커로 병원을 선택할 수 있습니다.
             </p>
           </Card>
         </section>
